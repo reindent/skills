@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>/agent-talk : __SID__</title>
+<style>
+  :root{
+    --bg:#0a0a10; --panel:#111119; --panel-2:#0d0d14; --border:rgba(255,255,255,.08);
+    --border-strong:rgba(255,255,255,.15); --text:#eceaf2; --dim:#a09fb2; --faint:#7c7b90;
+    --a:#6ad7e5; --a-soft:rgba(106,215,229,.10); --a-line:rgba(106,215,229,.4);
+    --b:#e08bf5; --b-soft:rgba(224,139,245,.10); --b-line:rgba(224,139,245,.4);
+    --grad:linear-gradient(90deg,#6ad7e5,#e08bf5);
+    --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{max-width:100%;overflow-x:clip}
+  body{margin:0;font-family:var(--sans);background:var(--bg);color:var(--text);font-size:15px;line-height:1.55;-webkit-font-smoothing:antialiased}
+  .top{
+    position:sticky;top:0;z-index:10;display:flex;align-items:center;gap:12px;flex-wrap:wrap;
+    padding:12px clamp(16px,4vw,28px);background:rgba(10,10,16,.85);backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--border);
+  }
+  .brand{font-family:var(--mono);font-weight:600;font-size:.95rem}
+  .brand .slash{color:var(--a)}
+  .sid{font-family:var(--mono);font-size:.78rem;color:var(--faint)}
+  .status{margin-left:auto;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .pill{display:inline-flex;align-items:center;gap:7px;font-family:var(--mono);font-size:.74rem;color:var(--dim);border:1px solid var(--border);border-radius:100px;padding:5px 12px;background:var(--panel-2)}
+  .pill i{width:7px;height:7px;border-radius:50%;background:var(--faint);display:block}
+  .pill.turnA{color:var(--a);border-color:var(--a-line)} .pill.turnA i{background:var(--a)}
+  .pill.turnB{color:var(--b);border-color:var(--b-line)} .pill.turnB i{background:var(--b)}
+  .pill.done{color:var(--text);border-color:var(--border-strong)}
+  .pill.done i{background:linear-gradient(90deg,#6ad7e5,#e08bf5)}
+  .pill.dead{color:#f0a3a3}
+
+  .wrap{max-width:880px;margin:0 auto;padding:clamp(16px,4vw,30px)}
+  .task{
+    font-size:.92rem;color:var(--dim);border:1px solid var(--border);border-left:2px solid var(--a);
+    border-radius:10px;padding:12px 16px;background:var(--panel-2);margin-bottom:22px;
+  }
+  .task b{color:var(--text)}
+
+  .round{display:flex;margin-bottom:18px}
+  .round.left{justify-content:flex-start}
+  .round.right{justify-content:flex-end}
+  .bubble{
+    width:min(92%,720px);border:1px solid var(--border);border-radius:14px;background:var(--panel);
+    overflow:hidden;
+  }
+  .left  .bubble{border-left:2px solid var(--a-line);background:linear-gradient(180deg,var(--a-soft),var(--panel) 60px)}
+  .right .bubble{border-right:2px solid var(--b-line);background:linear-gradient(180deg,var(--b-soft),var(--panel) 60px)}
+  .bhead{display:flex;align-items:center;gap:9px;padding:9px 14px;border-bottom:1px solid var(--border);font-family:var(--mono);font-size:.73rem;color:var(--faint)}
+  .bhead .who{font-weight:600}
+  .left  .bhead .who{color:var(--a)}
+  .right .bhead .who{color:var(--b)}
+  .bhead .tn{margin-left:auto}
+  .bubble pre{margin:0;padding:13px 16px;font-family:var(--mono);font-size:.8rem;line-height:1.7;color:var(--dim);white-space:pre-wrap;word-break:break-word;max-height:480px;overflow-y:auto}
+  .bubble pre .win{background:var(--grad);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;font-weight:650}
+
+  .empty{
+    text-align:center;color:var(--faint);font-size:.92rem;border:1px dashed var(--border);
+    border-radius:12px;padding:34px 20px;margin-top:8px;
+  }
+  .foot{text-align:center;color:var(--faint);font-family:var(--mono);font-size:.72rem;padding:18px 0 30px}
+</style>
+</head>
+<body>
+<div class="top">
+  <span class="brand"><span class="slash">/</span>agent-talk monitor</span>
+  <span class="sid">session __SID__</span>
+  <span class="status">
+    <span class="pill" id="turnpill"><i></i><span id="turntext">loading</span></span>
+    <span class="pill" id="clockpill"><i></i><span id="clocktext">…</span></span>
+  </span>
+</div>
+
+<div class="wrap">
+  <div class="task" id="task" hidden></div>
+  <div id="rounds"></div>
+  <div class="empty" id="empty" hidden>
+    No rounds in the history yet. This view updates live: the first snapshot
+    appears as soon as an agent finishes a turn.
+  </div>
+</div>
+<p class="foot">read-only · refreshes every 2s · ~/.agent-talk/__SID__.history.md</p>
+
+<script>
+(function(){
+  var SID = '__SID__';
+  var roundsEl = document.getElementById('rounds');
+  var emptyEl = document.getElementById('empty');
+  var taskEl = document.getElementById('task');
+  var turnPill = document.getElementById('turnpill'), turnText = document.getElementById('turntext');
+  var clockText = document.getElementById('clocktext'), clockPill = document.getElementById('clockpill');
+  var lastCount = -1, meta = null, agents = {};   // uuid -> 'initiator' | 'joiner'
+
+  function fetchText(p){ return fetch(p + '?t=' + Date.now()).then(function(r){ return r.ok ? r.text() : null; }).catch(function(){ return null; }); }
+
+  function parseAgents(canvas){
+    var m = canvas && canvas.match(/^AGENTS:\s*(.+)$/m);
+    if(!m) return;
+    m[1].split(',').forEach(function(part){
+      var kv = part.trim().split('=');
+      if(kv.length === 2) agents[kv[0].trim()] = kv[1].trim();
+    });
+  }
+  function roleOf(uuid){
+    if(agents[uuid]) return agents[uuid];
+    var k = Object.keys(agents).find(function(u){ return u.indexOf(uuid) === 0 || uuid.indexOf(u) === 0; });
+    return k ? agents[k] : 'initiator';
+  }
+
+  function render(turns){
+    roundsEl.innerHTML = '';
+    turns.forEach(function(t){
+      var role = roleOf(t.uuid);
+      var row = document.createElement('div');
+      row.className = 'round ' + (role === 'joiner' ? 'right' : 'left');
+      var bub = document.createElement('div'); bub.className = 'bubble';
+      var head = document.createElement('div'); head.className = 'bhead';
+      var who = document.createElement('span'); who.className = 'who';
+      who.textContent = 'agent ' + t.uuid.slice(0,8) + ' · ' + role;
+      var tn = document.createElement('span'); tn.className = 'tn';
+      tn.textContent = 'turn ' + t.n + ' · ' + t.time + (t.bf ? ' · backfilled' : '');
+      head.appendChild(who); head.appendChild(tn);
+      var pre = document.createElement('pre');
+      // text nodes only; the one styled exception is the consensus heading
+      t.body.split('\n').forEach(function(line, i){
+        if(i) pre.appendChild(document.createTextNode('\n'));
+        if(/^## CONSENSUS REACHED/.test(line)){
+          var w = document.createElement('span'); w.className = 'win'; w.textContent = line; pre.appendChild(w);
+        } else {
+          pre.appendChild(document.createTextNode(line));
+        }
+      });
+      bub.appendChild(head); bub.appendChild(pre); row.appendChild(bub); roundsEl.appendChild(row);
+    });
+  }
+
+  function tickClock(){
+    if(!meta || !meta.created){ clockText.textContent = '…'; return; }
+    var end = (meta.created + (meta.timeout_minutes || 5) * 60) * 1000;
+    var left = Math.floor((end - Date.now()) / 1000);
+    if(left <= 0){ clockText.textContent = 'timeout window over'; clockPill.classList.add('dead'); }
+    else { clockText.textContent = Math.floor(left/60) + 'm ' + (left%60) + 's left'; clockPill.classList.remove('dead'); }
+  }
+
+  function poll(){
+    Promise.all([
+      fetchText('./' + SID + '.history.md'),
+      fetchText('./' + SID + '.md'),
+      fetchText('./' + SID + '.meta.json')
+    ]).then(function(res){
+      var hist = res[0], canvas = res[1], metaRaw = res[2];
+      if(metaRaw){ try{ meta = JSON.parse(metaRaw); }catch(e){} }
+      if(meta && meta.protocol && !document.getElementById('protopill')){
+        var pp = document.createElement('span'); pp.className = 'pill'; pp.id = 'protopill';
+        var pi = document.createElement('i'); var pt = document.createElement('span');
+        pt.textContent = 'protocol ' + meta.protocol;
+        pp.appendChild(pi); pp.appendChild(pt);
+        turnPill.parentNode.insertBefore(pp, turnPill);
+      }
+      if(canvas){
+        parseAgents(canvas);
+        var tm = canvas.match(/^TASK:\s*(.+)$/m);
+        if(tm){ taskEl.hidden = false; taskEl.innerHTML = ''; var b = document.createElement('b'); b.textContent = 'TASK: '; taskEl.appendChild(b); taskEl.appendChild(document.createTextNode(tm[1])); }
+        // status
+        if(/^## CONSENSUS REACHED/m.test(canvas)){
+          turnPill.className = 'pill done'; turnText.textContent = 'consensus reached';
+        } else {
+          var ends = canvas.match(/^END OF ([0-9a-f-]+)\s*$/gmi);
+          var lastEnd = ends && ends.length ? ends[ends.length-1].replace(/^END OF /i,'').trim() : null;
+          if(lastEnd){
+            var lastRole = roleOf(lastEnd);                 // who finished last
+            var nextRole = lastRole === 'initiator' ? 'joiner' : 'initiator';
+            turnPill.className = 'pill ' + (nextRole === 'joiner' ? 'turnB' : 'turnA');
+            turnText.textContent = 'writing: ' + nextRole;
+          }
+        }
+      }
+      var turns = [];
+      if(hist){
+        var re = /^===== TURN (\d+) \| ([0-9a-f-]+) \| ([^|]+?)( \| backfill)? =====$/gm, m, marks = [];
+        while((m = re.exec(hist))) marks.push({ n:+m[1], uuid:m[2], time:m[3].trim(), bf:!!m[4], at:m.index, after:re.lastIndex });
+        marks.forEach(function(mk, i){
+          var end = i + 1 < marks.length ? marks[i+1].at : hist.length;
+          turns.push({ n:mk.n, uuid:mk.uuid, time:mk.time, bf:mk.bf, body:hist.slice(mk.after, end).trim() });
+        });
+      }
+      emptyEl.hidden = turns.length > 0;
+      if(turns.length !== lastCount){
+        var pinned = (window.innerHeight + window.scrollY) >= (document.body.scrollHeight - 80);
+        render(turns);
+        lastCount = turns.length;
+        if(pinned || turns.length <= 1) window.scrollTo(0, document.body.scrollHeight);
+      }
+      tickClock();
+    });
+  }
+
+  poll();
+  setInterval(poll, 2000);
+  setInterval(tickClock, 1000);
+})();
+</script>
+</body>
+</html>

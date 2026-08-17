@@ -1,0 +1,8 @@
+{
+  "name": "browser-skill",
+  "private": true,
+  "description": "Driver dependency for the Reindent browser skill",
+  "dependencies": {
+    "chrome-remote-interface": "^0.33.0"
+  }
+}

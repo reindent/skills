@@ -1,0 +1,312 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>/browser : drive a real browser, safely</title>
+<meta name="description" content="browser: drive a real, headed, logged-in Chrome over the DevTools Protocol (no Playwright, no Puppeteer), Chromium-first on macOS and Linux, under the session-isolation discipline that keeps a fleet of agents safe." />
+<style>
+  :root{
+    --bg:#0a0c12;
+    --panel:#0f1420;
+    --panel-2:#0c1018;
+    --panel-3:#131a29;
+    --border:rgba(255,255,255,.08);
+    --border-strong:rgba(255,255,255,.15);
+    --text:#e8ecf4;
+    --dim:#9aa5b8;
+    --faint:#7c8699;
+    --a:#7aa2ff;
+    --a-deep:#5b8bff;
+    --a-soft:rgba(122,162,255,.12);
+    --amber:#e5b74a;
+    --amber-soft:rgba(229,183,74,.1);
+    --green:#6ee7a8;
+    --radius:14px;
+    --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{max-width:100%;overflow-x:clip}
+  html{-webkit-text-size-adjust:100%;scroll-behavior:smooth}
+  body{
+    margin:0;font-family:var(--sans);background:var(--bg);color:var(--text);
+    line-height:1.6;font-size:16px;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;
+  }
+  body::before{
+    content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
+    background:
+      radial-gradient(680px 420px at 50% -8%, rgba(122,162,255,.10), transparent 66%),
+      radial-gradient(560px 400px at 90% 8%, rgba(229,183,74,.05), transparent 70%);
+  }
+  a{color:inherit;text-decoration:none}
+  code,pre{font-family:var(--mono)}
+  .container{width:100%;max-width:1080px;margin:0 auto;padding-inline:clamp(20px,5vw,40px);position:relative;z-index:1}
+  :focus-visible{outline:2px solid var(--a);outline-offset:2px;border-radius:6px}
+
+  .nav{position:sticky;top:0;z-index:20;backdrop-filter:blur(10px);background:rgba(10,12,18,.74);border-bottom:1px solid var(--border)}
+  .nav__inner{display:flex;align-items:center;justify-content:space-between;height:58px}
+  .brand{font-family:var(--mono);font-weight:600;font-size:1rem;display:inline-flex;align-items:center;gap:8px}
+  .skl-icon--brand{width:18px;height:18px;color:var(--a)}
+  .skl-icon{display:block}
+  .brand .slash{color:var(--a)}
+  .brand .by{color:var(--faint);font-weight:400;font-size:.8rem;margin-left:8px;font-family:var(--sans)}
+  .nav__links{display:flex;align-items:center;gap:24px}
+  .nav__links a{color:var(--dim);font-size:.9rem;transition:color .15s}
+  .nav__links a:hover{color:var(--text)}
+
+  .hero{padding:clamp(40px,6vw,70px) 0 clamp(26px,4vw,44px);display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:clamp(26px,4vw,52px);align-items:center}
+  .eyebrow{display:inline-flex;align-items:center;gap:9px;font-size:.74rem;letter-spacing:.16em;text-transform:uppercase;color:var(--dim);font-weight:600}
+  .eyebrow .pip{width:6px;height:6px;border-radius:50%;background:var(--a);box-shadow:0 0 0 4px rgba(122,162,255,.16)}
+  h1{margin:16px 0 0;font-size:clamp(1.9rem,4.4vw,3rem);line-height:1.08;letter-spacing:-.028em;font-weight:680;text-wrap:balance}
+  h1 .hl{color:var(--a);background:linear-gradient(180deg,#a7c0ff,#6a92f5);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+  .hero__sub{margin:14px 0 0;color:var(--dim);font-size:clamp(1rem,1.5vw,1.12rem)}
+  .hero__sub b{color:var(--text);font-weight:600}
+
+  /* typed terminal stage */
+  .stage{position:relative}
+  .term{
+    background:var(--panel-2);border:1px solid var(--border-strong);border-radius:var(--radius);
+    box-shadow:0 30px 70px -34px rgba(0,0,0,.8);
+    overflow:hidden;
+    opacity:0;transform:translateY(16px);animation:rise .8s cubic-bezier(.2,.7,.2,1) .12s forwards;
+  }
+  @keyframes rise{to{opacity:1;transform:none}}
+  .term__bar{display:flex;align-items:center;gap:7px;padding:11px 14px;background:var(--panel-3);border-bottom:1px solid var(--border)}
+  .term__bar i{width:10px;height:10px;border-radius:50%;background:var(--border-strong)}
+  .term__bar i:nth-child(1){background:#e0655a}.term__bar i:nth-child(2){background:#e0b04f}.term__bar i:nth-child(3){background:#57d364}
+  .term__bar code{margin-left:8px;font-size:.72rem;color:var(--faint)}
+  .term__body{padding:16px 18px;min-height:238px;font-family:var(--mono);font-size:.82rem;line-height:1.75;color:var(--dim)}
+  .term__body .ps{color:var(--faint)}
+  .term__body .ok{color:var(--green)}
+  .term__body .em{color:var(--a)}
+  .term__body .warn{color:var(--amber)}
+  .tw-caret{display:inline-block;width:.5em;height:1.05em;transform:translateY(.18em);margin-left:1px;background:var(--a);border-radius:1px;animation:twblink 1s step-end infinite}
+  @keyframes twblink{50%{opacity:0}}
+
+  section{padding:clamp(26px,4vw,44px) 0}
+  h2{margin:0;font-size:clamp(1.35rem,2.6vw,1.8rem);letter-spacing:-.02em;font-weight:680}
+  .sect-lede{margin:10px 0 0;color:var(--dim);max-width:62ch}
+
+  .law{
+    border:1px solid rgba(229,183,74,.38);border-radius:var(--radius);
+    background:linear-gradient(180deg,var(--amber-soft),rgba(229,183,74,.02));
+    padding:22px 24px;margin-top:26px;
+  }
+  .law h3{margin:0;font-family:var(--mono);font-size:.85rem;letter-spacing:.1em;text-transform:uppercase;color:var(--amber)}
+  .law p,.law li{color:var(--dim);font-size:.94rem}
+  .law ol{padding-left:22px;margin:12px 0 0;display:grid;gap:9px}
+  .law b,.law strong{color:var(--text)}
+  .law .motto{margin-top:12px;color:var(--text);font-weight:600}
+
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:22px}
+  .tile{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px}
+  .tile h3{margin:0;font-size:.98rem;display:flex;align-items:center;gap:9px}
+  .tile h3 .n{font-family:var(--mono);font-size:.72rem;color:var(--a);background:var(--a-soft);border-radius:6px;padding:2px 7px}
+  .tile p,.tile li{color:var(--dim);font-size:.9rem}
+  .tile ul,.tile ol{padding-left:20px;margin:8px 0 0;display:grid;gap:5px}
+  .tile pre{background:var(--panel-2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;overflow-x:auto;margin:10px 0 0;font-size:.76rem;line-height:1.6}
+  .tile strong{color:var(--text)}
+
+  .foot{border-top:1px solid var(--border);margin-top:30px;padding:32px 0 30px;color:var(--faint);font-size:.85rem}
+  .foot__grid{display:grid;grid-template-columns:minmax(0,1.4fr) auto auto;gap:clamp(22px,5vw,64px);align-items:start}
+  .foot__logo{font-weight:650;color:var(--text)}
+  .foot__logo b{color:var(--a)}
+  .foot__grid p{margin:8px 0 0;max-width:34ch;line-height:1.55}
+  .foot__skills{display:grid;gap:10px}
+  .foot__skills a{display:inline-flex;align-items:center;gap:8px;font-family:var(--mono);font-size:.85rem}
+  .skl-icon--sm{width:17px;height:17px}
+  .foot__bar{margin-top:24px;padding-top:16px;border-top:1px solid var(--border)}
+  @media (max-width:720px){.foot__grid{grid-template-columns:1fr;gap:22px}}
+  .foot a{color:var(--dim)}
+  .foot a:hover{color:var(--text)}
+
+  @media (max-width:860px){
+    .hero{grid-template-columns:1fr}
+    .grid2{grid-template-columns:1fr}
+  }
+  @media (prefers-reduced-motion:reduce){
+    *{animation:none !important;transition:none !important}
+    .term{opacity:1;transform:none}
+  }
+</style>
+</head>
+<body>
+
+<header class="nav">
+  <div class="container nav__inner">
+    <a class="brand" href="../"><svg class="skl-icon skl-icon--brand" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5m0 2a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v10a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2z"/><path d="M6 8h.01"/><path d="M9 8h.01"/></svg><span class="slash">/</span>browser<span class="by">by Reindent</span></a>
+    <nav class="nav__links">
+      <a href="#method">The method</a>
+      <a href="#law">The law</a>
+      <a href="../boards/">boards</a>
+      <a href="../chat/">chat</a>
+      <a href="../">Reindent Skills</a>
+    </nav>
+  </div>
+</header>
+
+<main class="container">
+  <section class="hero">
+    <div>
+      <span class="eyebrow"><span class="pip"></span>Chromium-first · DevTools Protocol · no API required</span>
+      <h1>Give your agents <span class="hl">a browser.</span></h1>
+      <p class="hero__sub">Some work has no API. Dashboards, logged-in tools, forms, the whole human web. This skill gives an agent a real, headed Chromium (or Chrome) it can drive with <b>nothing but the DevTools Protocol</b>: read, click, type, verify. No Playwright, no Puppeteer.</p>
+    </div>
+    <div class="stage">
+      <div class="term">
+        <div class="term__bar"><i></i><i></i><i></i><code>agent session · live</code></div>
+        <div class="term__body" id="termbody"><span class="ps">$</span> <span id="tw"></span><span class="tw-caret"></span></div>
+      </div>
+    </div>
+  </section>
+
+
+  <section id="method">
+    <h2>The method</h2>
+    <p class="sect-lede">Eight moves, each learned in production. The theme of all of them: never assume, always verify with a read.</p>
+    <div class="grid2">
+      <div class="tile">
+        <h3><span class="n">01</span>Launch</h3>
+        <p>Chromium-first, cross-platform (macOS and Linux first-class; Windows not supported). Resolve the binary, never hardcode one:</p>
+        <pre><code>resolve_browser() {
+  [ -n "$CDP_BROWSER" ] &amp;&amp; { echo "$CDP_BROWSER"; return; }
+  for c in \
+    "/Applications/Chromium.app/Contents/MacOS/Chromium" \
+    "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"; do
+    [ -x "$c" ] &amp;&amp; { echo "$c"; return; }
+  done
+  for c in chromium chromium-browser google-chrome-stable google-chrome; do
+    command -v "$c" &gt;/dev/null &amp;&amp; { echo "$c"; return; }
+  done
+  return 1
+}
+
+"$(resolve_browser)" \
+  --remote-debugging-port=9222 \
+  --user-data-dir=$HOME/.cache/cdp-profile-example \
+  --no-first-run --no-default-browser-check \
+  "https://example.com" &amp;</code></pre>
+        <ul>
+          <li><strong>Why this order:</strong> an explicit <code>CDP_BROWSER</code> override wins; then Chromium (package-manager installable, no auto-updater, open source); then Chrome, because most desktops already have it, it ships the proprietary codecs (H.264/Widevine) some sites need, and Google sign-in is friendlier to branded Chrome. Vanilla Chromium can hit "this browser may not be secure" on Google logins, which matters for a skill whose whole point is logged-in sessions.</li>
+          <li>Always a dedicated <code>--user-data-dir</code>, never the user's main profile. It persists logins across relaunches.</li>
+          <li>Headed, so a human can watch and solve a login or 2FA once.</li>
+          <li>Capture the PID; stop it by exact PID only, never by name. The authoritative liveness check is <code>lsof -ti :&lt;port&gt;</code>.</li>
+        </ul>
+      </div>
+      <div class="tile">
+        <h3><span class="n">02</span>Connect &amp; discover</h3>
+        <p><code>GET /json</code> on the debug port lists targets; pick <code>type === "page"</code> and the URL you want, then attach with <code>chrome-remote-interface</code> and enable <code>Runtime</code> + <code>Page</code>.</p>
+      </div>
+      <div class="tile">
+        <h3><span class="n">03</span>Read the page</h3>
+        <p>One IIFE returning a single <code>JSON.stringify</code>'d payload. Always sweep for warnings: <code>[role=alert]</code>, <code>aria-invalid</code>, text near "error" and "failed". Red text is critical information: surface it, never skip it. An empty table is not proof of absence: check the active filters first.</p>
+      </div>
+      <div class="tile">
+        <h3><span class="n">04</span>Wait correctly</h3>
+        <p><code>document.readyState === "complete"</code> does NOT mean a SPA has rendered. Poll your own condition (selector present, rows &gt; 0) every 1.5–2.5s up to a budget, from inside one process. Never sleep blindly when a poll can decide.</p>
+      </div>
+      <div class="tile">
+        <h3><span class="n">05</span>Click safely</h3>
+        <ol>
+          <li>Find the element by accessible text or role, scroll it to center.</li>
+          <li><strong>Probe before clicking:</strong> <code>elementFromPoint(x,y)</code> must carry the EXACT expected text; mismatch means abort and re-locate.</li>
+          <li>Dispatch the click, then <strong>verify the effect</strong> with a read.</li>
+        </ol>
+        <p>Never act on a table row by index: virtualization re-maps rows. Verify the row's entity name in-DOM first.</p>
+      </div>
+      <div class="tile">
+        <h3><span class="n">06</span>Type into modern apps</h3>
+        <p>Plain <code>el.value = "x"</code> does not register in React or Vue. Use the native value setter + <code>input</code>/<code>change</code> events; for <code>contenteditable</code>, send real keystrokes. <strong>Editors lie:</strong> after any important entry, save, reopen, and verify it persisted.</p>
+      </div>
+      <div class="tile">
+        <h3><span class="n">07</span>Screenshot</h3>
+        <p><code>Page.captureScreenshot</code>, then actually LOOK at it. Layout, red banners, and truncation are invisible in innerText. On HiDPI screens, scale coordinates by the pixel ratio before mapping a screenshot position to a click.</p>
+      </div>
+      <div class="tile">
+        <h3><span class="n">08</span>Discipline</h3>
+        <ul>
+          <li>Separate reads from mutations; disclose even view-only changes when the task says "don't change anything".</li>
+          <li>Restricted to specific domains means navigate ONLY those.</li>
+          <li>After any UI mutation, verify through an independent channel (API/CLI) when one exists. The UI's own confirmation is not proof.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+  <section id="law">
+    <h2>The session law</h2>
+    <p class="sect-lede">The capability is the easy half. What separates this from naive browser automation is the discipline: this law exists because of a real incident, where an agent used a browser session belonging to another agent and posted from the wrong account. It was caught minutes before real damage. In a multi-agent fleet, this is the failure mode that turns automation into liability.</p>
+    <div class="law">
+      <h3>⚠ Sessions are personal</h3>
+      <ol>
+        <li><strong>One agent = one browser session = one profile = one port.</strong> A profile dir and debug port belong to one agent for the lifetime of its role. Profiles are persistent: platform logins live in them and survive relaunches. Treat another agent's session like another person's logged-in phone: never touch it.</li>
+        <li><strong>Never reuse or attach to another agent's session</strong>: not its port, not its profile dir, not its running Chrome, not "just to read something". The only exception is explicit, written, per-task human authorization.</li>
+        <li><strong>Verify before you act, both layers.</strong> Session: is this MY port and MY profile? (<code>lsof</code> the port; know your own profile path.) Account: before EVERY write on any platform (post, reply, like, comment, repost, follow, DM), read the logged-in handle from the DOM in the same page context and assert it is the account the action is intended for. Mismatch = stop and report.</li>
+      </ol>
+      <p class="motto">One session, one agent, always yours, always verified.</p>
+    </div>
+  </section>
+</main>
+
+<footer class="foot">
+  <div class="container">
+    <div class="foot__grid">
+      <div>
+        <span class="foot__logo">Reindent <b>Skills</b></span>
+        <p>Extracted from daily production use by the Reindent agent workforce.</p>
+      </div>
+      <nav class="foot__skills" aria-label="Skills">
+        <a href="../boards/"><svg class="skl-icon--sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4l6 0"/><path d="M14 4l6 0"/><path d="M4 8m0 2a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v8a2 2 0 0 1 -2 2h-2a2 2 0 0 1 -2 -2z"/><path d="M14 8m0 2a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v2a2 2 0 0 1 -2 2h-2a2 2 0 0 1 -2 -2z"/></svg>boards</a>
+        <a href="../chat/"><svg class="skl-icon--sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 14l-3 -3h-7a1 1 0 0 1 -1 -1v-6a1 1 0 0 1 1 -1h9a1 1 0 0 1 1 1v10"/><path d="M14 15v2a1 1 0 0 1 -1 1h-7l-3 3v-10a1 1 0 0 1 1 -1h2"/></svg>chat</a>
+        <a href="../browser/"><svg class="skl-icon--sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5m0 2a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v10a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2z"/><path d="M6 8h.01"/><path d="M9 8h.01"/></svg>browser</a>
+      </nav>
+      <nav class="foot__skills" aria-label="Links">
+        <a href="https://github.com/reindent">GitHub</a>
+        <a href="https://reindent.com">reindent.com</a>
+      </nav>
+    </div>
+    <div class="foot__bar">Part of <a href="../">Reindent Skills</a>. Some work has no API.</div>
+  </div>
+</footer>
+
+<script>
+(function(){
+  var LINES = [
+    ['$ open billing.example.com ', '<span class="em">ready</span>'],
+    ['$ read overdue invoices ', '<span class="ok">3 found</span>'],
+    ['$ account check ', '<span class="ok">@example-brand ✓</span>'],
+    ['$ click "Export" ', '<span class="em">probe ✓ → click</span>'],
+    ['$ save report.csv ', '<span class="ok">4.2kb written</span>'],
+    ['$ done ', '<span class="ok">✓ no API needed</span>']
+  ];
+  var body = document.getElementById('termbody');
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches){
+    body.innerHTML = LINES.map(function(l){return '<div>'+l[0]+l[1]+'</div>';}).join('');
+    return;
+  }
+  var li = 0, pos = 0, done = [];
+  function render(cur){
+    body.innerHTML = done.map(function(h){return '<div>'+h+'</div>';}).join('') +
+      '<div>'+cur+'<span class="tw-caret"></span></div>';
+  }
+  function step(){
+    var plain = LINES[li][0].replace(/<[^>]+>/g,'');
+    if(pos < plain.length){
+      pos++;
+      render(LINES[li][0].slice(0, LINES[li][0].length - (plain.length - pos)));
+      return setTimeout(step, 26 + Math.random()*40);
+    }
+    done.push(LINES[li][0] + LINES[li][1]);
+    li++; pos = 0;
+    if(li === LINES.length){
+      render('');
+      return setTimeout(function(){ done = []; li = 0; render(''); setTimeout(step, 700); }, 3600);
+    }
+    render('');
+    return setTimeout(step, 620);
+  }
+  setTimeout(step, 900);
+})();
+</script>
+</body>
+</html>

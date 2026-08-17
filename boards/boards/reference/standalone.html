@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Board</title>
+<!--
+  boards — self-contained board renderer. No server, no dependencies, works from
+  file://. Used by the "standalone page" and "render on demand" modes.
+
+  The agent injects the CURRENT board markdown into the #board-src block below
+  (replace everything between the BEGIN/END markers with the live PROJECT.md),
+  then opens this file however suits the context. Regenerate on every view so it
+  is never stale; treat the written copy (e.g. boards/view.html) as a derived
+  artifact and keep it out of git. Board content renders as text only (never
+  innerHTML) — a hostile board file is inert.
+-->
+<style>
+  :root{--bg:#0b0d10;--panel:#12161b;--panel2:#1b2027;--border:rgba(255,255,255,.09);--text:#e8eaed;--dim:#9aa2ad;--faint:#858c97;--accent:#6ee7a8;--amber:#e5b74a;--blue:#7aa2ff;--teal:#54d0c4;--mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;--sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:var(--sans);line-height:1.55;padding:24px}
+  .wrap{max-width:1000px;margin:0 auto}
+  header{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:20px}
+  h1{font-size:1.2rem;margin:0;font-weight:650}
+  .meta{color:var(--faint);font-size:.82rem;font-family:var(--mono)}
+  .toggle{margin-left:auto;display:inline-flex;background:var(--panel);border:1px solid var(--border);border-radius:9px;padding:3px;gap:2px}
+  .toggle button{font:600 .82rem var(--sans);color:var(--dim);background:transparent;border:0;border-radius:6px;padding:6px 12px;cursor:pointer}
+  .toggle button.on{color:var(--text);background:var(--panel2)}
+  .group{margin-bottom:18px}
+  .group h2{font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;color:var(--dim);margin:0 0 8px;display:flex;gap:8px;align-items:center}
+  .group h2 .ct{margin-left:auto;color:var(--faint);font-family:var(--mono);font-weight:500}
+  .card{border:1px solid var(--border);border-left:3px solid var(--faint);border-radius:9px;background:rgba(255,255,255,.02);padding:11px 13px;margin-bottom:8px}
+  .card[data-s="doing"]{border-left-color:var(--amber)}
+  .card[data-s="done"]{border-left-color:var(--teal)}
+  .card .row{display:flex;gap:9px;align-items:center;flex-wrap:wrap}
+  .id{font-family:var(--mono);font-size:.72rem;color:var(--dim);border:1px solid var(--border);border-radius:5px;padding:1px 6px}
+  .ttl{font-weight:550}
+  .card[data-s="done"] .ttl{color:var(--dim)}
+  .body{color:var(--dim);font-size:.9rem;margin-top:4px}
+  .pill{font:650 .66rem var(--sans);text-transform:uppercase;letter-spacing:.03em;border-radius:100px;padding:2px 8px;margin-left:auto}
+  .pill.doing{color:#f0d489;background:rgba(229,183,74,.14)}
+  .pill.done{color:#a9ece4;background:rgba(84,208,196,.14)}
+  .cols{display:grid;grid-template-columns:repeat(4,minmax(180px,1fr));gap:12px;overflow-x:auto}
+  .col{background:var(--panel);border:1px solid var(--border);border-radius:11px;padding:11px}
+  .kmd{white-space:pre-wrap;font-family:var(--mono);font-size:.82rem;color:var(--dim);background:var(--panel);border:1px solid var(--border);border-radius:11px;padding:16px;overflow-x:auto}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1 id="title">Board</h1>
+    <span class="meta" id="meta"></span>
+    <span class="toggle" role="group" aria-label="Board view">
+      <button data-v="list" class="on">List</button>
+      <button data-v="kanban">Kanban</button>
+      <button data-v="markdown">Markdown</button>
+    </span>
+  </header>
+  <div id="view"></div>
+</div>
+
+<!-- BEGIN board markdown — the agent replaces the contents of this block with the live board file -->
+<script id="board-src" type="text/markdown">
+# Project board
+
+## P0 — now
+- [~] **T-01 · Example doing item** — replace this block with your PROJECT.md
+- [ ] **T-02 · Example to-do**
+
+## Done
+- [x] **T-00 · Example done** — shipped
+</script>
+<!-- END board markdown -->
+
+<script>
+// parser — mirrors the skill's parse.ts (plain JS, zero deps)
+function parseBoard(md){
+  var HEAD=/^##\s+(.+)$/, ITEM=/^- \[( |x|X|~)\]\s+(.*)$/, BOLD=/^\*\*(.+?)\*\*\s*(?:—|–|-)?\s*(.*)$/, TID=/^([A-Z]{1,3}-\d{1,4})\s*·\s*/;
+  var ST={' ':'todo','~':'doing','x':'done','X':'done'};
+  var secs=[], sec=null, item=null, title='';
+  md.split('\n').forEach(function(raw){
+    var line=raw.replace(/\s+$/,'');
+    var h=HEAD.exec(line); if(h){ sec={title:h[1].trim(),note:'',items:[]}; secs.push(sec); item=null; return; }
+    var it=ITEM.exec(line);
+    if(it&&sec){
+      var t=it[2].trim(), m=BOLD.exec(t), ti=m?m[1]:t, bd=m?m[2]:'', idm=TID.exec(ti), id='';
+      if(idm){ id=idm[1]; ti=ti.slice(idm[0].length); }
+      item={status:ST[it[1]]||'todo', id:id, title:ti, body:bd}; sec.items.push(item); return;
+    }
+    if(item&&/^\s+\S/.test(raw)){ item.body=(item.body?item.body+' ':'')+line.trim(); return; }
+    item=null;
+    if(sec&&sec.items.length===0&&line.trim()&&line[0]!=='#'){ sec.note=(sec.note?sec.note+' ':'')+line.trim(); }
+    else if(!sec&&/^#\s+/.test(line)){ title=line.replace(/^#\s+/,''); }
+  });
+  return { title:title, sections:secs.filter(function(s){ return s.items.length||s.note; }) };
+}
+function el(tag,cls,txt){ var e=document.createElement(tag); if(cls)e.className=cls; if(txt!=null)e.textContent=txt; return e; }
+
+var raw=document.getElementById('board-src').textContent.replace(/^\s*\n/,'').replace(/\n\s*$/,'');
+var data=parseBoard(raw);
+var all=data.sections.reduce(function(a,s){ return a.concat(s.items); },[]);
+var doneN=all.filter(function(i){ return i.status==='done'; }).length;
+document.getElementById('title').textContent=data.title||'Board';
+document.getElementById('meta').textContent=doneN+' of '+all.length+' done';
+
+function card(i){
+  var c=el('div','card'); c.setAttribute('data-s',i.status);
+  var row=el('div','row');
+  if(i.id) row.appendChild(el('span','id',i.id));
+  row.appendChild(el('span','ttl',i.title));
+  if(i.status!=='todo') row.appendChild(el('span','pill '+i.status, i.status==='done'?'Done':'Doing'));
+  c.appendChild(row);
+  if(i.body) c.appendChild(el('div','body',i.body));
+  return c;
+}
+function renderList(){
+  var v=el('div');
+  data.sections.forEach(function(s){
+    var g=el('div','group'), h=el('h2',null,s.title), d=s.items.filter(function(i){return i.status==='done';}).length;
+    h.appendChild(el('span','ct',d+'/'+s.items.length)); g.appendChild(h);
+    if(s.note) g.appendChild(el('div','body',s.note));
+    s.items.forEach(function(i){ g.appendChild(card(i)); });
+    v.appendChild(g);
+  });
+  return v;
+}
+function renderKanban(){
+  var lanes={Backlog:[],'To-do':[],Doing:[],Done:[]};
+  data.sections.forEach(function(s){
+    var t=s.title.toLowerCase();
+    s.items.forEach(function(i){
+      if(i.status==='done') lanes.Done.push(i);
+      else if(i.status==='doing') lanes.Doing.push(i);
+      else if(t.indexOf('p2')===0||t.indexOf('backlog')===0) lanes.Backlog.push(i);
+      else lanes['To-do'].push(i);
+    });
+  });
+  var wrap=el('div'), cols=el('div','cols');
+  Object.keys(lanes).forEach(function(k){
+    var col=el('div','col'), h=el('h2',null,k);
+    h.appendChild(el('span','ct',String(lanes[k].length))); col.appendChild(h);
+    lanes[k].forEach(function(i){ col.appendChild(card(i)); });
+    cols.appendChild(col);
+  });
+  wrap.appendChild(cols); return wrap;
+}
+function renderMd(){ return el('div','kmd', raw); }
+function show(v){
+  var host=document.getElementById('view'); host.textContent='';
+  host.appendChild(v==='kanban'?renderKanban():v==='markdown'?renderMd():renderList());
+  Array.prototype.forEach.call(document.querySelectorAll('.toggle button'),function(b){
+    var on=b.getAttribute('data-v')===v; b.classList.toggle('on',on); b.setAttribute('aria-pressed',on?'true':'false');
+  });
+}
+Array.prototype.forEach.call(document.querySelectorAll('.toggle button'),function(b){
+  b.addEventListener('click',function(){ show(b.getAttribute('data-v')); });
+});
+show(all.length?'list':'markdown');
+</script>
+</body>
+</html>

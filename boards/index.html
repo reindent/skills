@@ -1,0 +1,1072 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>BOARDS.md — your project board self-updates while you prompt to code</title>
+<meta name="description" content="Boards is a convention, not a tool: your roadmap is a markdown file your coding agent already edits, so the board updates in the same commit as the code — rendered in your own admin or as a standalone page." />
+<style>
+  :root{
+    --bg:#0a0b0d;
+    --panel:#101317;
+    --panel-2:#0c0e11;
+    --panel-3:#14181d;
+    --border:rgba(255,255,255,.08);
+    --border-strong:rgba(255,255,255,.14);
+    --text:#e8eaed;
+    --dim:#9aa2ad;
+    --faint:#858c97;
+    --accent:#6ee7a8;
+    --accent-deep:#39c483;
+    --add:#57d364;
+    --add-bg:rgba(46,160,67,.16);
+    --del:#f0655c;
+    --del-bg:rgba(248,81,73,.13);
+    --amber:#e5b74a;
+    --blue:#7aa2ff;
+    --violet:#b79cff;
+    --teal:#54d0c4;
+    --radius:14px;
+    --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+
+  *{box-sizing:border-box}
+  /* overflow-x:clip clips horizontally WITHOUT making body a scroll container
+     (which would break the sticky nav); overflow-y stays on the viewport. */
+  html,body{max-width:100%;overflow-x:clip}
+  html{-webkit-text-size-adjust:100%;scroll-behavior:smooth}
+  body{
+    margin:0;
+    font-family:var(--sans);
+    background:var(--bg);
+    color:var(--text);
+    line-height:1.6;
+    font-size:16px;
+    -webkit-font-smoothing:antialiased;
+    text-rendering:optimizeLegibility;
+  }
+  body::before{
+    content:"";
+    position:fixed;
+    inset:0;
+    z-index:0;
+    pointer-events:none;
+    background:
+      radial-gradient(680px 420px at 50% -8%, rgba(110,231,168,.10), transparent 66%),
+      radial-gradient(760px 520px at 88% 4%, rgba(122,162,255,.06), transparent 70%);
+  }
+  a{color:inherit;text-decoration:none}
+  code,pre{font-family:var(--mono)}
+
+  .container{
+    width:100%;
+    max-width:1120px;
+    margin:0 auto;
+    padding-inline:clamp(20px,5vw,40px);
+    position:relative;
+    z-index:1;
+  }
+
+  /* ---------- nav ---------- */
+  .nav{
+    position:sticky;top:0;z-index:20;
+    backdrop-filter:blur(10px);
+    background:rgba(10,11,13,.72);
+    border-bottom:1px solid var(--border);
+  }
+  .nav__inner{display:flex;align-items:center;justify-content:space-between;height:60px}
+  .brand{display:inline-flex;align-items:center;gap:9px;font-weight:650;letter-spacing:-.01em;font-size:1.02rem}
+  .brand .logo{color:var(--accent);flex:none}
+  .brand .by{color:var(--faint);font-weight:450;font-size:.82rem}
+  .dotmd{color:var(--accent)}
+  .nav__links{display:flex;align-items:center;gap:26px}
+  .nav__links a:not(.btn){color:var(--dim);font-size:.9rem;transition:color .15s}
+  .nav__links a:not(.btn):hover{color:var(--text)}
+  .nav__links a.btn--primary{color:#062015} /* dark text on green — beat .nav__links a specificity */
+
+  /* ---------- buttons ---------- */
+  .btn{
+    display:inline-flex;align-items:center;gap:8px;
+    font-family:var(--sans);font-size:.94rem;font-weight:600;
+    padding:11px 18px;border-radius:10px;border:1px solid transparent;cursor:pointer;
+    transition:transform .12s ease, box-shadow .2s ease, background .2s, border-color .2s, color .2s;
+    white-space:nowrap;
+  }
+  .btn--primary{background:var(--accent);color:#062015;box-shadow:0 1px 0 rgba(255,255,255,.25) inset, 0 8px 24px -12px rgba(110,231,168,.6)}
+  .btn--primary:hover{transform:translateY(-1px);box-shadow:0 1px 0 rgba(255,255,255,.3) inset, 0 12px 30px -12px rgba(110,231,168,.75)}
+  .btn--ghost{background:rgba(255,255,255,.02);border-color:var(--border-strong);color:var(--text)}
+  .btn--ghost:hover{border-color:rgba(255,255,255,.28);background:rgba(255,255,255,.05)}
+  .btn--sm{padding:8px 14px;font-size:.86rem;border-radius:9px}
+  .btn .gh{flex:none}
+  :focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:6px}
+
+  /* ---------- hero ---------- */
+  .hero{padding-top:clamp(40px,6vw,72px);padding-bottom:clamp(26px,4vw,44px)}
+  .eyebrow{display:inline-flex;align-items:center;gap:9px;font-size:.74rem;letter-spacing:.16em;text-transform:uppercase;color:var(--dim);font-weight:600}
+  .eyebrow .pip{width:6px;height:6px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 4px rgba(110,231,168,.14)}
+  .eyebrow .mono{font-family:var(--mono);letter-spacing:.02em;text-transform:none;color:var(--faint)}
+  h1{
+    margin:18px 0 0;
+    font-size:clamp(2.1rem,5.4vw,3.7rem);
+    line-height:1.04;letter-spacing:-.03em;font-weight:680;max-width:none;
+    text-wrap:balance;
+  }
+  h1 .nowrap{white-space:nowrap}
+  h1 .hl{color:var(--accent);background:linear-gradient(180deg,#8ff2bd,#4bd394);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+  .hero__sub{margin:16px 0 0;max-width:none;font-size:clamp(1.05rem,1.7vw,1.2rem);color:var(--dim)}
+  .hero__sub b{color:var(--text);font-weight:600}
+  .byeline{display:block;color:var(--text);font-size:clamp(1.2rem,2vw,1.5rem);font-weight:680;letter-spacing:-.02em;margin-bottom:10px}
+  .byeline em{color:var(--accent);font-style:normal}
+
+  .cta-row{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-top:24px}
+
+  .install{
+    display:inline-flex;align-items:center;gap:12px;max-width:100%;
+    background:var(--panel-2);border:1px solid var(--border-strong);border-radius:11px;
+    padding:9px 9px 9px 15px;font-family:var(--mono);
+  }
+  .install__prompt{color:var(--accent);user-select:none;flex:none}
+  .install__cmd{color:var(--text);font-size:.92rem;white-space:nowrap;overflow-x:auto;scrollbar-width:none}
+  .install__cmd::-webkit-scrollbar{display:none}
+  .install__copy{
+    flex:none;font-family:var(--sans);font-size:.78rem;font-weight:600;color:var(--dim);
+    background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:7px;padding:6px 11px;cursor:pointer;
+    transition:color .15s,border-color .15s,background .15s;
+  }
+  .install__copy:hover{color:var(--text);border-color:var(--border-strong)}
+  .install__copy.copied{color:var(--accent);border-color:rgba(110,231,168,.4)}
+
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:22px}
+  .chip{font-size:.78rem;color:var(--dim);border:1px solid var(--border);background:rgba(255,255,255,.02);border-radius:100px;padding:5px 12px}
+  .chip b{color:var(--text);font-weight:600}
+
+  /* ---------- the session (animated story) ---------- */
+  .stage{margin-top:clamp(26px,4vw,38px)}
+  .ide{
+    position:relative;
+    background:linear-gradient(180deg,#0f1216,#0b0d10);
+    border:1px solid var(--border-strong);border-radius:16px;overflow:hidden;
+    box-shadow:0 40px 90px -50px rgba(0,0,0,.9), 0 0 0 1px rgba(255,255,255,.02);
+  }
+  .ide__bar{display:flex;align-items:center;gap:14px;padding:0 14px;height:42px;border-bottom:1px solid var(--border);background:rgba(255,255,255,.015)}
+  .dots{display:flex;gap:7px;flex:none}
+  .dots i{width:11px;height:11px;border-radius:50%;background:#2a2f36;display:block}
+  .dots i:nth-child(1){background:#3a2326}
+  .dots i:nth-child(2){background:#3a3320}
+  .dots i:nth-child(3){background:#20321f}
+  .tabs{display:flex;gap:2px;min-width:0;overflow:hidden}
+  .tab{font-family:var(--mono);font-size:.78rem;color:var(--faint);padding:5px 11px;border-radius:7px 7px 0 0;white-space:nowrap}
+  .tab--active{color:var(--text);background:var(--panel-3);box-shadow:inset 0 -2px 0 var(--accent)}
+  .branch{margin-left:auto;flex:none;font-family:var(--mono);font-size:.76rem;color:var(--faint);display:inline-flex;align-items:center;gap:6px}
+  .branch svg{opacity:.8}
+
+  .ide__body{display:grid;grid-template-columns:minmax(0,.92fr) minmax(0,1.08fr)}
+  .pane{min-width:0;padding:18px}
+  .pane--chat{border-right:1px solid var(--border);background:var(--panel-2)}
+  .pane-label{font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);margin-bottom:14px;font-weight:600;display:flex;align-items:center;gap:8px}
+  .pane-label .agents{margin-left:auto;color:var(--faint);letter-spacing:.02em;text-transform:none;font-family:var(--mono);font-size:.68rem;font-weight:500}
+
+  /* animation — visible by default (no-JS / reduced-motion safe). In JS mode the
+     `.anim` class hides revealable bits until the timeline adds `.show`. */
+  .reveal{transition:opacity .5s ease, transform .5s ease}
+  #session.anim .reveal{opacity:0;transform:translateY(8px)}
+  #session.anim .reveal.show{opacity:1;transform:none}
+  .tw-caret{display:inline-block;width:.5em;height:1.05em;transform:translateY(.16em);margin-left:1px;background:var(--accent);border-radius:1px;animation:twblink 1.05s step-end infinite}
+  @keyframes twblink{50%{opacity:0}}
+  .msg--user .tw-caret{background:var(--blue)}
+
+  .msg{margin-bottom:13px}
+  .who{display:inline-block;font-family:var(--mono);font-size:.68rem;letter-spacing:.05em;text-transform:uppercase;color:var(--faint);margin-bottom:5px}
+  .msg--user .bubble{background:rgba(122,162,255,.10);border:1px solid rgba(122,162,255,.22);color:#e8ecf7;border-radius:11px;padding:9px 13px;font-size:.94rem;display:inline-block}
+  .msg--agent .bubble{color:var(--text);font-size:.92rem}
+  .msg--agent .bubble b{color:var(--accent);font-weight:650}
+  .tool{margin-top:9px;display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:.78rem;color:var(--dim);background:var(--panel-3);border:1px solid var(--border);border-radius:8px;padding:7px 11px}
+  .tool .ic{color:var(--accent);flex:none}
+  .tool code{color:var(--text)}
+  .tool .delta{margin-left:auto;flex:none}
+  .tool .delta .a{color:var(--add)}
+  .tool .delta .d{color:var(--del)}
+  .commit{margin-top:11px;font-family:var(--mono);font-size:.76rem;color:var(--faint);line-height:1.5;border-left:2px solid rgba(110,231,168,.35);padding:2px 0 2px 11px}
+  .commit .hash{color:var(--accent)}
+  .commit .msg-txt{color:var(--dim)}
+
+  /* output pane */
+  .out-block{margin-bottom:14px}
+  .out__label{font-family:var(--mono);font-size:.75rem;color:var(--faint);display:flex;align-items:center;gap:8px;margin-bottom:9px}
+  .out__label .pathfile{color:var(--dim)}
+
+  .miniboard{border:1px solid var(--border-strong);border-radius:10px;background:linear-gradient(180deg,#0f1317,#0c0f12);overflow:hidden}
+  .miniboard__head{display:flex;align-items:center;gap:9px;padding:9px 12px;border-bottom:1px solid var(--border);font-size:.82rem;font-weight:600}
+  .miniboard__head .dot{width:7px;height:7px;border-radius:50%;background:var(--accent);flex:none}
+  .miniboard__head .ct{margin-left:auto;font-family:var(--mono);font-size:.72rem;color:var(--faint)}
+  .mcard{display:flex;gap:9px;padding:9px 12px;border-bottom:1px solid var(--border);transition:opacity .55s ease, background .4s ease}
+  .mcard:last-child{border-bottom:none}
+  .mcard .cb{flex:none;width:16px;height:16px;font-size:.8rem;line-height:16px;text-align:center;color:var(--faint)}
+  .mcard.doing .cb{color:var(--amber)}
+  .mcard .txt{min-width:0}
+  .mcard .id{font-family:var(--mono);font-size:.72rem;color:var(--faint);margin-right:6px}
+  .mcard .ttl{font-size:.86rem;color:var(--text)}
+  .mcard .sub{display:block;font-size:.76rem;color:var(--faint);margin-top:2px}
+  .donetag{display:none;align-items:center;gap:5px;margin-left:auto;flex:none;font-family:var(--mono);font-size:.68rem;color:var(--teal);align-self:center}
+  #session.built .mcard--t03{background:rgba(84,208,196,.06)}
+  #session.built .mcard--t03 .cb{color:var(--teal)}
+  #session.built .mcard--t03 .donetag{display:inline-flex}
+  .cnt-after{display:none}
+  #session.built .cnt-before{display:none}
+  #session.built .cnt-after{display:inline}
+
+  /* miniboard view toggle + mini kanban */
+  .mbtoggle{display:inline-flex;gap:2px;margin-left:10px;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:8px;padding:2px;flex:none}
+  .mbtoggle button{font-family:var(--sans);font-size:.7rem;font-weight:600;color:var(--faint);background:transparent;border:0;border-radius:6px;padding:3px 9px;cursor:pointer}
+  .mbtoggle button.on{color:var(--text);background:var(--panel-3)}
+  .mbtoggle button.pressed{color:var(--text);background:rgba(110,231,168,.18);box-shadow:0 0 0 2px rgba(110,231,168,.4)}
+  .miniboard[data-mv="kanban"] .mb-list,.miniboard[data-mv="kanban"] .ct{display:none}
+  .miniboard[data-mv="list"] .mb-kanban{display:none}
+  .mb-kanban{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:11px}
+  .mkcol{min-width:0}
+  .mkcol h5{margin:0 0 8px;font-size:.62rem;letter-spacing:.07em;text-transform:uppercase;color:var(--dim);font-weight:650;display:flex;align-items:center;gap:5px}
+  .kdot2{width:6px;height:6px;border-radius:50%;flex:none}
+  .mkc{border:1px solid var(--border);border-left:3px solid var(--faint);border-radius:7px;background:var(--panel-3);padding:7px 8px;margin-bottom:7px}
+  .mkc:last-child{margin-bottom:0}
+  .mkc[data-pri="p0"]{border-left-color:var(--accent)}
+  .mkc[data-pri="done"]{border-left-color:var(--teal)}
+  .mkc .mkid{font-family:var(--mono);font-size:.66rem;color:var(--faint);display:block;margin-bottom:2px}
+  .mkc .mkt{font-size:.75rem;color:var(--text);line-height:1.3}
+
+  /* faux cursor (auto-demo click on Kanban) */
+  .fauxcursor{position:absolute;left:0;top:0;z-index:9;opacity:0;pointer-events:none;transition:left .95s cubic-bezier(.5,0,.2,1),top .95s cubic-bezier(.5,0,.2,1),opacity .3s ease,transform .18s ease;filter:drop-shadow(0 2px 4px rgba(0,0,0,.55))}
+  .fauxcursor.show{opacity:1}
+  .fauxcursor.click{transform:scale(.8)}
+
+  .diff{background:var(--panel-2);border:1px solid var(--border);border-radius:10px;overflow-x:auto;font-family:var(--mono);font-size:.82rem;line-height:1.62}
+  .dl{display:flex;white-space:pre;min-width:max-content;padding-right:14px}
+  .dl .g{width:26px;flex:none;text-align:center;color:var(--faint);user-select:none;border-right:1px solid var(--border);margin-right:12px}
+  .dl.ctx{color:var(--dim)}
+  .dl.add{background:var(--add-bg);color:#b9f2c2}
+  .dl.add .g{color:var(--add);background:rgba(46,160,67,.14)}
+  .dl.del{background:var(--del-bg);color:#f7b7b2}
+  .dl.del .g{color:var(--del);background:rgba(248,81,73,.12)}
+  .dl.head{color:var(--blue)}
+  .connector{display:flex;align-items:center;gap:10px;margin:12px 2px;font-size:.76rem;color:var(--faint);font-family:var(--mono)}
+  .connector::before,.connector::after{content:"";height:1px;flex:1;background:var(--border)}
+  .connector b{color:var(--accent);font-weight:600}
+
+  .replay{display:inline-flex;align-items:center;gap:7px;margin-top:14px;font-family:var(--sans);font-size:.8rem;color:var(--faint);background:transparent;border:1px solid var(--border);border-radius:8px;padding:6px 12px;cursor:pointer;transition:color .15s,border-color .15s}
+  .replay:hover{color:var(--text);border-color:var(--border-strong)}
+
+  .agents-strip{margin-top:16px;text-align:center;font-family:var(--mono);font-size:.78rem;color:var(--faint)}
+  .agents-strip b{color:var(--dim);font-weight:500}
+
+  /* ---------- generic sections ---------- */
+  section{padding-block:clamp(56px,8vw,100px);position:relative;z-index:1}
+  .sec-head{max-width:62ch}
+  .sec-head h2{margin:14px 0 0;font-size:clamp(1.55rem,3.4vw,2.1rem);line-height:1.14;letter-spacing:-.02em;font-weight:660}
+  .sec-head p{margin:14px 0 0;color:var(--dim);font-size:1.02rem}
+
+  /* ---------- board showcase (list + kanban) ---------- */
+  .bv-head{display:flex;flex-wrap:wrap;gap:16px;align-items:flex-end;justify-content:space-between}
+  .toggle{display:inline-flex;background:var(--panel-2);border:1px solid var(--border);border-radius:10px;padding:4px;gap:2px;flex:none}
+  .toggle button{font-family:var(--sans);font-size:.85rem;font-weight:600;color:var(--dim);background:transparent;border:0;border-radius:7px;padding:7px 15px;cursor:pointer;transition:color .15s,background .15s}
+  .toggle button.is-on{color:var(--text);background:var(--panel-3);box-shadow:inset 0 0 0 1px var(--border-strong)}
+
+  .bvframe{margin-top:26px;border:1px solid var(--border-strong);border-radius:16px;background:linear-gradient(180deg,#0f1216,#0b0d10);overflow:hidden;box-shadow:0 40px 90px -55px rgba(0,0,0,.9)}
+  .bvframe__bar{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--border)}
+  .bvframe__bar .logo{color:var(--accent);flex:none}
+  .bvframe__bar .t{font-weight:650;font-size:.95rem}
+  .bvframe__bar .sub{color:var(--faint);font-size:.8rem;margin-left:2px}
+  .bvframe__bar .env{margin-left:auto;font-family:var(--mono);font-size:.68rem;color:var(--faint);border:1px solid var(--border);border-radius:100px;padding:3px 10px;letter-spacing:.03em}
+  .bvbody{padding:clamp(14px,2.4vw,22px)}
+
+  /* list view */
+  .bv-list .lgroup{margin-bottom:20px}
+  .bv-list .lgroup:last-child{margin-bottom:0}
+  .lgroup__head{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+  .lgroup__head .gdot{width:9px;height:9px;border-radius:50%;flex:none}
+  .lgroup__head h3{margin:0;font-size:.82rem;letter-spacing:.06em;text-transform:uppercase;color:var(--text);font-weight:650}
+  .lgroup__head .gcount{margin-left:auto;font-family:var(--mono);font-size:.74rem;color:var(--faint)}
+  .lgroup__bar{height:4px;border-radius:3px;background:rgba(255,255,255,.06);overflow:hidden;margin-bottom:12px}
+  .lgroup__bar i{display:block;height:100%;background:linear-gradient(90deg,var(--accent-deep),var(--accent))}
+
+  .bcard{display:flex;gap:12px;padding:12px 14px;border:1px solid var(--border);border-left:3px solid var(--faint);border-radius:9px;background:rgba(255,255,255,.02);margin-bottom:9px}
+  .bcard:last-child{margin-bottom:0}
+  .bcard[data-pri="p0"]{border-left-color:var(--accent)}
+  .bcard[data-pri="p1"]{border-left-color:var(--amber)}
+  .bcard[data-pri="p2"]{border-left-color:var(--blue)}
+  .bcard[data-pri="done"]{border-left-color:var(--teal)}
+  .bcard .bcb{flex:none;width:18px;height:18px;line-height:18px;text-align:center;font-size:.82rem;color:var(--faint)}
+  .bcard .bcb.doing{color:var(--amber)}
+  .bcard .bcb.done{color:var(--teal)}
+  .bcard .bmain{min-width:0;flex:1}
+  .bcard .brow{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+  .bcard .bid{font-family:var(--mono);font-size:.73rem;color:var(--dim);border:1px solid var(--border);border-radius:5px;padding:1px 6px;flex:none}
+  .bcard .bttl{font-size:.92rem;color:var(--text);font-weight:550}
+  .bcard .pill{flex:none;font-size:.68rem;font-weight:650;letter-spacing:.03em;text-transform:uppercase;border-radius:100px;padding:2px 9px}
+  .pill.doing{color:#f0d489;background:rgba(229,183,74,.13);border:1px solid rgba(229,183,74,.3)}
+  .pill.done{color:#a9ece4;background:rgba(84,208,196,.12);border:1px solid rgba(84,208,196,.3)}
+  .bcard .bbody{margin-top:4px;font-size:.85rem;color:var(--dim)}
+  .bcard .bmeta{margin-top:6px;font-family:var(--mono);font-size:.7rem;color:var(--faint)}
+
+  /* kanban view */
+  .bv-kanban{overflow-x:auto;scrollbar-width:thin}
+  .kcols{display:grid;grid-template-columns:repeat(4,minmax(210px,1fr));gap:14px;min-width:760px}
+  .kcol{background:var(--panel-2);border:1px solid var(--border);border-radius:12px;padding:12px}
+  .kcol__head{display:flex;align-items:center;gap:8px;margin-bottom:12px}
+  .kcol__head .kdot{width:8px;height:8px;border-radius:50%;flex:none}
+  .kcol__head h3{margin:0;font-size:.78rem;letter-spacing:.05em;text-transform:uppercase;color:var(--text);font-weight:650}
+  .kcol__head .kct{margin-left:auto;font-family:var(--mono);font-size:.72rem;color:var(--faint)}
+  .kcard{border:1px solid var(--border);border-left:3px solid var(--faint);border-radius:9px;background:var(--panel-3);padding:10px 11px;margin-bottom:9px}
+  .kcard:last-child{margin-bottom:0}
+  .kcard[data-pri="p0"]{border-left-color:var(--accent)}
+  .kcard[data-pri="p1"]{border-left-color:var(--amber)}
+  .kcard[data-pri="p2"]{border-left-color:var(--blue)}
+  .kcard[data-pri="done"]{border-left-color:var(--teal)}
+  .kcard .kid{font-family:var(--mono);font-size:.71rem;color:var(--dim);margin-bottom:5px;display:inline-block}
+  .kcard .kttl{font-size:.86rem;color:var(--text);line-height:1.35}
+  .dot--p0{background:var(--accent)}.dot--p1{background:var(--amber)}.dot--p2{background:var(--blue)}.dot--doing{background:var(--amber)}.dot--done{background:var(--teal)}
+
+  #boardview[data-showing="list"] .bv-kanban,#boardview[data-showing="list"] .bv-md{display:none}
+  #boardview[data-showing="kanban"] .bv-list,#boardview[data-showing="kanban"] .bv-md{display:none}
+  #boardview[data-showing="markdown"] .bv-list,#boardview[data-showing="markdown"] .bv-kanban{display:none}
+  .bv-md{overflow-x:auto}
+  .bv-md pre{margin:0;font-family:var(--mono);font-size:.82rem;line-height:1.8;color:var(--dim);white-space:pre;min-width:max-content}
+  .bv-md .h{color:var(--blue)}
+  .bv-md .bx{color:var(--accent)}
+  .bv-md .bxd{color:var(--amber)}
+  .bv-md .tid{color:var(--text)}
+  .bv-md .dt{color:var(--teal)}
+  .bv-note{margin-top:16px;font-size:.86rem;color:var(--dim);max-width:70ch}
+  .bv-note code{color:var(--dim);background:rgba(255,255,255,.04);border-radius:5px;padding:1px 5px}
+
+  /* how it works */
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:38px}
+  .feat{padding:22px;border:1px solid var(--border);border-radius:var(--radius);background:linear-gradient(180deg,rgba(255,255,255,.02),rgba(255,255,255,0))}
+  .feat .ficon{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;background:rgba(110,231,168,.1);border:1px solid rgba(110,231,168,.22);color:var(--accent);margin-bottom:14px}
+  .feat h3{margin:0 0 7px;font-size:1.02rem;font-weight:640;letter-spacing:-.01em}
+  .feat p{margin:0;color:var(--dim);font-size:.92rem}
+  .feat code{font-size:.85em;color:var(--text);background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:5px;padding:1px 5px}
+
+  /* format contract */
+  .format-wrap{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,.85fr);gap:24px;align-items:center;margin-top:34px}
+  .codeblock{background:var(--panel-2);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+  .codeblock__bar{display:flex;align-items:center;gap:8px;padding:9px 13px;border-bottom:1px solid var(--border);font-family:var(--mono);font-size:.74rem;color:var(--faint)}
+  .codeblock__bar .fdot{width:8px;height:8px;border-radius:50%;background:var(--accent);opacity:.6}
+  .codeblock pre{margin:0;padding:15px 16px;overflow-x:auto;font-size:.82rem;line-height:1.7;color:var(--dim)}
+  .codeblock pre .h{color:var(--blue)}
+  .codeblock pre .bx{color:var(--accent)}
+  .codeblock pre .bxd{color:var(--amber)}
+  .codeblock pre .id{color:var(--text)}
+  .legend{display:flex;flex-direction:column;gap:14px}
+  .legend .li{display:flex;gap:12px;align-items:flex-start}
+  .legend .gl{font-family:var(--mono);font-size:.82rem;color:var(--accent);flex:none;width:34px;text-align:center;border:1px solid var(--border);border-radius:7px;padding:4px 0;background:var(--panel-2)}
+  .legend .li p{margin:0;font-size:.9rem;color:var(--dim)}
+  .legend .li p b{color:var(--text);font-weight:600}
+
+  /* honest / convention */
+  .honest{background:linear-gradient(180deg,rgba(255,255,255,.014),rgba(255,255,255,0));border-block:1px solid var(--border)}
+  .honest .prose{max-width:66ch;margin-top:22px}
+  .honest .prose p{margin:0 0 16px;color:var(--dim);font-size:1.03rem}
+  .honest .prose p:last-child{margin-bottom:0}
+  .honest .prose b{color:var(--text);font-weight:600}
+  .honest .prose a.ref{color:var(--accent);border-bottom:1px solid rgba(110,231,168,.3);padding-bottom:1px}
+  .honest .prose a.ref:hover{border-color:var(--accent)}
+  .compare{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:34px}
+  .comp{padding:22px;border:1px solid var(--border);border-radius:var(--radius)}
+  .comp--boards{border-color:rgba(110,231,168,.28);background:rgba(110,231,168,.035)}
+  .comp h3{margin:0 0 16px;font-size:.96rem;font-weight:640;display:flex;align-items:center;gap:9px}
+  .comp h3 .k{font-family:var(--mono);font-size:.72rem;color:var(--faint);font-weight:500;margin-left:auto}
+  .comp ul{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:12px}
+  .comp li{display:flex;gap:11px;font-size:.92rem;color:var(--dim)}
+  .comp li .mk{flex:none;color:var(--faint);margin-top:.15em}
+  .comp--boards li .mk{color:var(--accent)}
+  .comp li b{color:var(--text);font-weight:600}
+
+  /* final CTA */
+  .final{text-align:center}
+  .final .sec-head{margin-inline:auto}
+  .final h2{max-width:20ch;margin-inline:auto}
+  .final .install{margin-top:28px}
+  .final .cta-row{justify-content:center;margin-top:20px}
+  .final .note{margin-top:22px;font-size:.86rem;color:var(--dim);max-width:52ch;margin-inline:auto}
+  .oralt{margin-top:30px;max-width:58ch;margin-inline:auto}
+  .oralt__line{display:block;font-family:var(--mono);font-size:.76rem;color:var(--faint);letter-spacing:.14em;text-transform:uppercase;margin-bottom:12px}
+  .oralt p{margin:0;color:var(--dim);font-size:1rem;line-height:1.6}
+  .urlcopy{font-family:var(--mono);font-size:.92em;color:var(--accent);background:rgba(110,231,168,.08);border:1px solid rgba(110,231,168,.28);border-radius:6px;padding:1px 7px;cursor:pointer;transition:background .15s}
+  .urlcopy:hover{background:rgba(110,231,168,.16)}
+  .urlcopy.copied{color:var(--accent);border-color:rgba(110,231,168,.5)}
+  .final .note code{color:var(--dim);background:rgba(255,255,255,.04);border-radius:5px;padding:1px 5px}
+
+  /* footer */
+  footer{border-top:1px solid var(--border);padding-block:38px;position:relative;z-index:1}
+  .foot{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:18px}
+  .foot__brand{display:flex;align-items:center;gap:10px;font-weight:600}
+  .foot__brand .logo{color:var(--accent)}
+  .foot p{margin:8px 0 0;color:var(--faint);font-size:.85rem;max-width:46ch}
+  .foot__links{display:flex;gap:22px;font-size:.88rem;color:var(--dim)}
+  .foot__links a:hover{color:var(--text)}
+
+  /* ---------- motion (play once, reduced-motion safe) ---------- */
+  @media (prefers-reduced-motion:no-preference){
+    .stage .ide{opacity:0;transform:translateY(16px);animation:rise .8s cubic-bezier(.2,.7,.2,1) .12s forwards}
+  }
+  @keyframes rise{to{opacity:1;transform:none}}
+
+  /* ---------- responsive ---------- */
+  @media (max-width:900px){.format-wrap{grid-template-columns:1fr}}
+  @media (max-width:820px){
+    .ide__body{grid-template-columns:1fr}
+    .pane--chat{border-right:none;border-bottom:1px solid var(--border)}
+    .grid3{grid-template-columns:1fr}
+    .compare{grid-template-columns:1fr}
+  }
+  @media (max-width:640px){
+    .nav__links a:not(.btn){display:none}
+    h1{max-width:none}
+  }
+  .skl-row{display:flex;gap:18px;margin-top:14px}
+  .skl-row a{display:inline-flex;align-items:center;gap:7px;font-family:var(--mono);font-size:.82rem;color:var(--dim);text-decoration:none}
+  .skl-row a:hover{color:var(--text)}
+  .skl-icon--sm{width:16px;height:16px}
+</style>
+</head>
+<body>
+
+<header class="nav" id="top">
+  <div class="container nav__inner">
+    <a class="brand" href="#top" aria-label="BOARDS.md by Reindent">
+      <svg class="logo" width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <rect x="3" y="3" width="18" height="18" rx="5" stroke="currentColor" stroke-width="1.6"/>
+        <path d="M7.4 9.2h6.2M7.4 12.6h4.2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" opacity="0.7"/>
+        <path d="M14 14.6l1.7 1.7 3.1-3.7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <span>BOARDS<span class="dotmd">.md</span></span> <span class="by">/ Reindent</span>
+    </a>
+    <nav class="nav__links">
+      <a href="#board">The board</a>
+      <a href="#how">How it works</a>
+      <a href="#convention">Convention</a>
+      <a href="../">Reindent Skills</a>
+      <a href="https://github.com/reindent/boards">GitHub</a>
+      <a class="btn btn--primary btn--sm" href="#start">Get Started →</a>
+    </nav>
+  </div>
+</header>
+
+<!-- HERO (demo-first) -->
+<section class="hero">
+  <div class="container">
+    <span class="eyebrow"><span class="pip"></span> An installable skill · <span class="mono">npx skills add reindent/boards</span></span>
+    <h1>The project board that <span class="hl">writes itself</span> <span class="nowrap">while you build.</span></h1>
+
+    <!-- the animated story -->
+    <div class="stage">
+      <div class="ide" id="session">
+        <div class="ide__bar">
+          <div class="dots"><i></i><i></i><i></i></div>
+          <div class="tabs">
+            <span class="tab tab--active">agent session</span>
+            <span class="tab">PROJECT.md</span>
+          </div>
+          <span class="branch">
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M11.75 2.5a.75.75 0 100 1.5.75.75 0 000-1.5zm-2.25.75a2.25 2.25 0 113 2.122V6A2.5 2.5 0 019.75 8.5h-3a1 1 0 00-1 1v1.128a2.251 2.251 0 11-1.5 0V5.372a2.25 2.25 0 111.5 0v1.836A2.492 2.492 0 016.75 7h3A1 1 0 0010.75 6v-.628A2.25 2.25 0 019.5 3.25zM4.25 12a.75.75 0 100 1.5.75.75 0 000-1.5zM3.5 3.25a.75.75 0 111.5 0 .75.75 0 01-1.5 0z"/></svg>
+            main
+          </span>
+        </div>
+
+        <div class="ide__body">
+          <!-- chat pane -->
+          <div class="pane pane--chat">
+            <div class="pane-label">Agent session <span class="agents">any coding agent</span></div>
+
+            <div class="msg msg--user reveal msg1">
+              <span class="who">you</span>
+              <div class="bubble"><span class="say">what's left before launch?</span></div>
+            </div>
+
+            <div class="msg msg--agent reveal msg2">
+              <span class="who">agent</span>
+              <div class="bubble"><span class="say">Four P0 items are still open before launch — reading them from PROJECT.md:</span></div>
+            </div>
+
+            <div class="msg msg--user reveal msg3">
+              <span class="who">you</span>
+              <div class="bubble"><span class="say">Let's build T-03, the CSV importer — a couple of customers are blocked on it.</span></div>
+            </div>
+
+            <div class="msg msg--agent reveal msg4">
+              <span class="who">agent</span>
+              <div class="bubble"><span class="say">Shipped it — CSV upload, parse, validate, insert, with tests. Marking T-03 done and moving it under ## Done, in the same commit as the code.</span></div>
+              <div class="blk-tools reveal">
+                <div class="tool"><span class="ic">✎</span> Created <code>src/import/csv.ts</code> <span class="delta"><span class="a">+128</span> <span class="d">−0</span></span></div>
+                <div class="tool"><span class="ic">✎</span> Edited <code>PROJECT.md</code> <span class="delta"><span class="a">+1</span> <span class="d">−1</span></span></div>
+                <div class="commit">
+                  <span class="hash">a1f9c02</span> <span class="msg-txt">feat: CSV importer (T-03)</span><br>
+                  2 files changed &nbsp;<span style="color:var(--add)">+129</span> <span style="color:var(--del)">−1</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- output pane -->
+          <div class="pane pane--out">
+            <div class="pane-label">Your board · rendered from the file</div>
+
+            <div class="out-block reveal blk-board">
+              <div class="miniboard" data-mv="list">
+                <div class="miniboard__head">
+                  <span class="dot"></span> Project board
+                  <span class="ct"><span class="cnt-before">P0 · 0/4</span><span class="cnt-after">P0 · 0/3</span></span>
+                  <span class="mbtoggle" role="group" aria-label="Board view">
+                    <button type="button" data-mv="list" class="on" aria-pressed="true">List</button>
+                    <button type="button" data-mv="kanban" aria-pressed="false">Kanban</button>
+                  </span>
+                </div>
+                <div class="mb-list">
+                  <div class="mcard doing">
+                    <span class="cb">◐</span>
+                    <div class="txt"><span class="id">T-01</span><span class="ttl">Wire Stripe checkout</span><span class="sub">test mode first, then live keys</span></div>
+                  </div>
+                  <div class="mcard">
+                    <span class="cb">○</span>
+                    <div class="txt"><span class="id">T-02</span><span class="ttl">Rate-limit the public API</span><span class="sub">100 req/min per IP · 429 + Retry-After</span></div>
+                  </div>
+                  <div class="mcard mcard--t03">
+                    <span class="cb">○</span>
+                    <div class="txt"><span class="id">T-03</span><span class="ttl">CSV importer</span><span class="sub">bulk-import users from a CSV</span></div>
+                    <span class="donetag">✓ Done</span>
+                  </div>
+                  <div class="mcard">
+                    <span class="cb">○</span>
+                    <div class="txt"><span class="id">T-04</span><span class="ttl">Email verification on signup</span><span class="sub">double opt-in before first login</span></div>
+                  </div>
+                </div>
+                <div class="mb-kanban">
+                  <div class="mkcol">
+                    <h5><span class="kdot2 dot--p0"></span>To-do</h5>
+                    <div class="mkc" data-pri="p0"><span class="mkid">T-02</span><div class="mkt">Rate-limit the API</div></div>
+                    <div class="mkc" data-pri="p0"><span class="mkid">T-04</span><div class="mkt">Email verification</div></div>
+                  </div>
+                  <div class="mkcol">
+                    <h5><span class="kdot2 dot--doing"></span>Doing</h5>
+                    <div class="mkc" data-pri="p0"><span class="mkid">T-01</span><div class="mkt">Wire Stripe checkout</div></div>
+                  </div>
+                  <div class="mkcol">
+                    <h5><span class="kdot2 dot--done"></span>Done</h5>
+                    <div class="mkc" data-pri="done"><span class="mkid">T-03</span><div class="mkt">CSV importer</div></div>
+                    <div class="mkc" data-pri="done"><span class="mkid">T-00</span><div class="mkt">HTTPS + HSTS</div></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="out-block reveal blk-diff">
+              <div class="out__label"><span class="pathfile">PROJECT.md</span> · working-tree diff</div>
+              <div class="diff" tabindex="0" aria-label="PROJECT.md diff">
+                <div class="dl ctx"><span class="g"> </span>## P0 — before launch</div>
+                <div class="dl del"><span class="g">-</span>- [ ] **T-03 · CSV importer** — bulk-import users from a CSV</div>
+                <div class="dl ctx"><span class="g"> </span></div>
+                <div class="dl ctx"><span class="g"> </span>## Done</div>
+                <div class="dl add"><span class="g">+</span>- [x] **T-03 · CSV importer** — shipped 2026-07-04</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="fauxcursor" aria-hidden="true">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="#f4f6f8" stroke="#0a0b0d" stroke-width="1.3" stroke-linejoin="round"><path d="M5 3l14.5 8.4-6.4 1.2 3.5 6.7-2.7 1.4-3.5-6.7L5 18.9z"/></svg>
+        </div>
+      </div>
+
+      <button class="replay" id="replay" type="button" aria-label="Replay the demo">↻ Replay</button>
+    </div>
+
+    <p class="hero__sub"><b class="byeline">Say bye to your <em>project-management tool</em>.</b> Boards is a <b>convention, not a tool</b> — your roadmap lives in a markdown file your coding agent already edits, so the board moves in the <b>same commit</b> as the code it describes. No CLI, no server, no database. The file is the database.</p>
+
+    <div class="cta-row">
+      <a class="btn btn--primary" href="#start">Get Started →</a>
+      <a class="btn btn--ghost" href="https://github.com/reindent/boards">
+        <svg class="gh" width="17" height="17" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+        reindent/boards
+      </a>
+      <div class="install">
+        <span class="install__prompt">$</span>
+        <code class="install__cmd">npx skills add reindent/boards</code>
+        <button class="install__copy" type="button" data-copy="npx skills add reindent/boards" data-label="Copy">Copy</button>
+      </div>
+    </div>
+
+    <div class="chips">
+      <span class="chip">No CLI</span>
+      <span class="chip">No server</span>
+      <span class="chip">No database</span>
+      <span class="chip"><b>The file is</b> the database</span>
+      <span class="chip"><b>git log</b> is the audit trail</span>
+    </div>
+    <p class="agents-strip"><b>Works with</b> Claude Code · Codex · Cursor · Gemini CLI · <b>70+ agents</b> via the open skills CLI</p>
+  </div>
+</section>
+
+<!-- BOARD SHOWCASE -->
+<section id="board">
+  <div class="container">
+    <div class="bv-head">
+      <div class="sec-head">
+        <span class="eyebrow"><span class="pip"></span> 01 · The board</span>
+        <h2>The same file, rendered for humans.</h2>
+        <p>Your agent keeps the markdown honest; a tiny parser turns it into a board you can actually read — as a list, a kanban, or the raw markdown. Mount it in the admin you already have, ship a standalone page, or have your agent render it on demand. Wherever you want it.</p>
+      </div>
+      <div class="toggle" role="group" aria-label="Board view">
+        <button type="button" data-view="list" class="is-on" aria-pressed="true">List</button>
+        <button type="button" data-view="kanban" aria-pressed="false">Kanban</button>
+        <button type="button" data-view="markdown" aria-pressed="false">Markdown</button>
+      </div>
+    </div>
+
+    <div class="bvframe" id="boardview" data-showing="list">
+      <div class="bvframe__bar">
+        <svg class="logo" width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5" stroke="currentColor" stroke-width="1.7"/><path d="M14 14.6l1.7 1.7 3.1-3.7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span class="t">BOARDS.md · Project</span>
+        <span class="sub">— rendered from PROJECT.md</span>
+        <span class="env">your admin · or standalone</span>
+      </div>
+
+      <div class="bvbody">
+        <!-- LIST -->
+        <div class="bv-list">
+          <div class="lgroup">
+            <div class="lgroup__head"><span class="gdot dot--p0"></span><h3>P0 — before launch</h3><span class="gcount">0 / 3</span></div>
+            <div class="lgroup__bar"><i style="width:0%"></i></div>
+            <div class="bcard" data-pri="p0">
+              <span class="bcb doing">◐</span>
+              <div class="bmain">
+                <div class="brow"><span class="bid">T-01</span><span class="bttl">Wire Stripe checkout</span><span class="pill doing">Doing</span></div>
+                <div class="bbody">Test mode first, then swap to live keys behind an env flag.</div>
+                <div class="bmeta">created 2026-06-28 · updated 2026-07-03</div>
+              </div>
+            </div>
+            <div class="bcard" data-pri="p0">
+              <span class="bcb">○</span>
+              <div class="bmain">
+                <div class="brow"><span class="bid">T-02</span><span class="bttl">Rate-limit the public API</span></div>
+                <div class="bbody">100 req/min per IP on <code style="font-family:var(--mono)">/api/*</code>; return 429 with a Retry-After.</div>
+                <div class="bmeta">created 2026-06-30 · updated 2026-06-30</div>
+              </div>
+            </div>
+            <div class="bcard" data-pri="p0">
+              <span class="bcb">○</span>
+              <div class="bmain">
+                <div class="brow"><span class="bid">T-04</span><span class="bttl">Email verification on signup</span></div>
+                <div class="bbody">Double opt-in; block login until the address is confirmed.</div>
+                <div class="bmeta">created 2026-07-01 · updated 2026-07-01</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="lgroup">
+            <div class="lgroup__head"><span class="gdot dot--p1"></span><h3>P1 — soon</h3><span class="gcount">0 / 3</span></div>
+            <div class="lgroup__bar"><i style="width:0%"></i></div>
+            <div class="bcard" data-pri="p1">
+              <span class="bcb">○</span>
+              <div class="bmain">
+                <div class="brow"><span class="bid">T-05</span><span class="bttl">Audit log on admin actions</span></div>
+                <div class="bbody">Who changed what, when — one append-only table.</div>
+                <div class="bmeta">created 2026-07-02 · updated 2026-07-02</div>
+              </div>
+            </div>
+            <div class="bcard" data-pri="p1">
+              <span class="bcb">○</span>
+              <div class="bmain">
+                <div class="brow"><span class="bid">T-06</span><span class="bttl">Retry failed webhooks</span></div>
+                <div class="bbody">Idempotency keys + exponential backoff; dead-letter after 5 tries.</div>
+                <div class="bmeta">created 2026-07-02 · updated 2026-07-03</div>
+              </div>
+            </div>
+            <div class="bcard" data-pri="p1">
+              <span class="bcb">○</span>
+              <div class="bmain">
+                <div class="brow"><span class="bid">T-07</span><span class="bttl">Per-workspace usage dashboard</span></div>
+                <div class="bbody">Requests, seats, storage — read from the metering table.</div>
+                <div class="bmeta">created 2026-07-03 · updated 2026-07-03</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="lgroup">
+            <div class="lgroup__head"><span class="gdot dot--done"></span><h3>Done</h3><span class="gcount">2 / 2</span></div>
+            <div class="lgroup__bar"><i style="width:100%"></i></div>
+            <div class="bcard" data-pri="done">
+              <span class="bcb done">✓</span>
+              <div class="bmain">
+                <div class="brow"><span class="bid">T-00</span><span class="bttl">HTTPS redirect + HSTS</span><span class="pill done">Done</span></div>
+                <div class="bbody">Shipped 2026-06-25 (9f8e7d6).</div>
+              </div>
+            </div>
+            <div class="bcard" data-pri="done">
+              <span class="bcb done">✓</span>
+              <div class="bmain">
+                <div class="brow"><span class="bid">T-03</span><span class="bttl">CSV importer</span><span class="pill done">Done</span></div>
+                <div class="bbody">Shipped 2026-07-04 (a1f9c02).</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- KANBAN -->
+        <div class="bv-kanban">
+          <div class="kcols">
+            <div class="kcol">
+              <div class="kcol__head"><span class="kdot dot--p2"></span><h3>Backlog</h3><span class="kct">3</span></div>
+              <div class="kcard" data-pri="p2"><span class="kid">T-08</span><div class="kttl">Referral program + credits</div></div>
+              <div class="kcard" data-pri="p2"><span class="kid">T-09</span><div class="kttl">SSO (SAML) for teams</div></div>
+              <div class="kcard" data-pri="p2"><span class="kid">T-10</span><div class="kttl">Dark mode</div></div>
+            </div>
+            <div class="kcol">
+              <div class="kcol__head"><span class="kdot dot--p0"></span><h3>To-do</h3><span class="kct">4</span></div>
+              <div class="kcard" data-pri="p0"><span class="kid">T-02</span><div class="kttl">Rate-limit the public API</div></div>
+              <div class="kcard" data-pri="p0"><span class="kid">T-04</span><div class="kttl">Email verification on signup</div></div>
+              <div class="kcard" data-pri="p1"><span class="kid">T-05</span><div class="kttl">Audit log on admin actions</div></div>
+              <div class="kcard" data-pri="p1"><span class="kid">T-06</span><div class="kttl">Retry failed webhooks</div></div>
+            </div>
+            <div class="kcol">
+              <div class="kcol__head"><span class="kdot dot--doing"></span><h3>Doing</h3><span class="kct">1</span></div>
+              <div class="kcard" data-pri="p0"><span class="kid">T-01</span><div class="kttl">Wire Stripe checkout</div></div>
+            </div>
+            <div class="kcol">
+              <div class="kcol__head"><span class="kdot dot--done"></span><h3>Done</h3><span class="kct">3</span></div>
+              <div class="kcard" data-pri="done"><span class="kid">T-00</span><div class="kttl">HTTPS redirect + HSTS</div></div>
+              <div class="kcard" data-pri="done"><span class="kid">T-11</span><div class="kttl">Password reset flow</div></div>
+              <div class="kcard" data-pri="done"><span class="kid">T-03</span><div class="kttl">CSV importer</div></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- MARKDOWN -->
+        <div class="bv-md">
+          <pre><span class="h">## P0 — before launch</span>
+- [<span class="bxd">~</span>] <span class="tid">**T-01 · Wire Stripe checkout**</span> — test mode first, then live keys
+- [<span class="bx"> </span>] <span class="tid">**T-02 · Rate-limit the public API**</span> — 100 req/min per IP · 429 + Retry-After
+- [<span class="bx"> </span>] <span class="tid">**T-04 · Email verification on signup**</span> — double opt-in
+
+<span class="h">## P1 — soon</span>
+- [<span class="bx"> </span>] <span class="tid">**T-05 · Audit log on admin actions**</span> — who changed what, when
+- [<span class="bx"> </span>] <span class="tid">**T-06 · Retry failed webhooks**</span> — idempotency keys + backoff
+- [<span class="bx"> </span>] <span class="tid">**T-07 · Per-workspace usage dashboard**</span> — requests, seats, storage
+
+<span class="h">## Done</span>
+- [<span class="bx">x</span>] <span class="tid">**T-00 · HTTPS redirect + HSTS**</span> — <span class="dt">shipped 2026-06-25</span>
+- [<span class="bx">x</span>] <span class="tid">**T-03 · CSV importer**</span> — <span class="dt">shipped 2026-07-04</span></pre>
+        </div>
+      </div>
+    </div>
+
+    <p class="bv-note">Three lenses on one file: <b>List</b> follows the priority sections, <b>Kanban</b> re-buckets by status, <b>Markdown</b> is the raw source. Mount the renderer in your admin, ship a standalone page, or have your agent render it <b>on demand</b> — the board file doesn't care. The only new syntax is the <code>[~]</code> "doing" glyph.</p>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section id="how">
+  <div class="container">
+    <div class="sec-head">
+      <span class="eyebrow"><span class="pip"></span> 02 · How it works</span>
+      <h2>The board is a byproduct of building.</h2>
+      <p>Your agent reads and writes files while it works. Boards just points that habit at a markdown file — so keeping the roadmap current costs nothing extra.</p>
+    </div>
+
+    <div class="grid3">
+      <div class="feat">
+        <div class="ficon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v6c0 1.66 3.58 3 8 3s8-1.34 8-3V5"/><path d="M4 11v6c0 1.66 3.58 3 8 3s8-1.34 8-3v-6"/></svg>
+        </div>
+        <h3>The file is the database</h3>
+        <p>A board is any markdown file you name — <code>PROJECT.md</code>, <code>MARKETING.md</code>, <code>RELEASES.md</code>, whatever stream of work you want to track — checked into the repo. No schema, no migration, no SaaS. Want the history? Run <code>git log</code>.</p>
+      </div>
+      <div class="feat">
+        <div class="ficon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 3v6M12 15v6M3 12h6M15 12h6"/></svg>
+        </div>
+        <h3>Atomic with the code</h3>
+        <p>The agent edits the board as it builds, so the board diff lands in the <b>same commit</b> as the code it describes. No sync job, no second surface to rot — the commit is the proof.</p>
+      </div>
+      <div class="feat">
+        <div class="ficon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l-6-6 6-6M15 6l6 6-6 6"/></svg>
+        </div>
+        <h3>~70 lines, zero deps</h3>
+        <p>A tiny parser — no markdown library — renders the file inside your own admin, or as a standalone page, in whatever environment you choose. It's all text: no <code>dangerouslySetInnerHTML</code>, no XSS surface, no supply chain.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FORMAT CONTRACT -->
+<section style="padding-top:0">
+  <div class="container">
+    <div class="sec-head">
+      <span class="eyebrow"><span class="pip"></span> 03 · The format contract</span>
+      <h2>Plain text a human and an agent both read.</h2>
+      <p>Talk to your agent in plain language — "add a bug for the export timeout", "move T-12 to done", "what's left before launch?" — and it edits the markdown to match. The whole grammar fits on a napkin.</p>
+    </div>
+
+    <div class="format-wrap">
+      <div class="codeblock">
+        <div class="codeblock__bar"><span class="fdot"></span> PROJECT.md</div>
+        <pre><span class="h">## P0 — before launch</span>
+- [<span class="bx"> </span>] <span class="id">**T-01 · Wire Stripe checkout**</span> — test mode first
+- [<span class="bxd">~</span>] <span class="id">**T-02 · Rate-limit the API**</span> — 100 req/min per IP
+
+<span class="h">## Done</span>
+- [<span class="bx">x</span>] <span class="id">**T-00 · HTTPS + HSTS**</span> — shipped 2026-06-25</pre>
+      </div>
+
+      <div class="legend">
+        <div class="li"><span class="gl">[ ]</span><p><b>To-do.</b> An open item waiting to be picked up.</p></div>
+        <div class="li"><span class="gl">[~]</span><p><b>Doing.</b> In progress right now — the glyph is the status.</p></div>
+        <div class="li"><span class="gl">[x]</span><p><b>Done.</b> Shipped, dated, moved under <code>## Done</code>.</p></div>
+        <div class="li"><span class="gl">T-xx</span><p><b>Stable ids.</b> Never renumbered. New items take the next free number, so commits and chat can reference them forever.</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- HONEST / CONVENTION -->
+<section id="convention" class="honest">
+  <div class="container">
+    <div class="sec-head">
+      <span class="eyebrow"><span class="pip"></span> 04 · The honest part</span>
+      <h2>A convention, not a tool.</h2>
+    </div>
+
+    <div class="prose">
+      <p>An agent keeping tasks in sync isn't a new idea, and there's genuinely good software here. <a class="ref" href="https://github.com/MrLesk/Backlog.md">Backlog.md</a> is a git-native task CLI built for agents — its board is committed markdown too; you just drive it through a command you invoke ("no automatic synchronization"), by design. <a class="ref" href="https://github.com/eranhirs/claude-todos">claude-todos</a> runs a self-managing todo backend beside your code. Others expose a kanban board to agents over MCP. If you want a hosted product with a write-UI, one of those is the right call — and we'd point you to it.</p>
+      <p>Boards makes a different trade. There's nothing to invoke and nothing to run: <b>no CLI, no MCP server, no database, no service.</b> The board is just a file your agent already edits, and the only "app" is a small renderer you drop into your own admin — or a standalone page. You give up a write-UI and a hosted backend. In return, <b>the board is the repo</b> — versioned, diffable, and updated in the same commit as the code that moved it.</p>
+    </div>
+
+    <div class="compare">
+      <div class="comp">
+        <h3>Reach for a tool <span class="k">Backlog.md · claude-todos · MCP boards</span></h3>
+        <ul>
+          <li><span class="mk">→</span> You want a <b>write-UI</b> or a hosted board others can click.</li>
+          <li><span class="mk">→</span> You want a <b>CLI or MCP</b> command to invoke and script against.</li>
+          <li><span class="mk">→</span> You want a <b>separate app or backend</b> others can use without the repo.</li>
+        </ul>
+      </div>
+      <div class="comp comp--boards">
+        <h3>Reach for Boards <span class="k">this page</span></h3>
+        <ul>
+          <li><span class="mk">✓</span> You want the board to <b>be the repo</b> — versioned and diffable.</li>
+          <li><span class="mk">✓</span> You want <b>zero runtime, zero deps, zero services</b> to operate.</li>
+          <li><span class="mk">✓</span> You want the board to <b>move in the same commit</b> as the code.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FINAL CTA -->
+<section id="start" class="final">
+  <div class="container">
+    <div class="sec-head">
+      <span class="eyebrow" style="justify-content:center"><span class="pip"></span> Get started</span>
+      <h2>Start in one line. Delete it in one line.</h2>
+      <p>Install the skill, point your agent at a <code>PROJECT.md</code>, and prompt as usual. The commitment is a markdown file — walk away any time and your history is still just git.</p>
+    </div>
+
+    <div class="install">
+      <span class="install__prompt">$</span>
+      <code class="install__cmd">npx skills add reindent/boards</code>
+      <button class="install__copy" type="button" data-copy="npx skills add reindent/boards" data-label="Copy">Copy</button>
+    </div>
+
+    <div class="cta-row">
+      <a class="btn btn--primary" href="https://github.com/reindent/boards">Get Started →</a>
+      <a class="btn btn--ghost" href="https://github.com/reindent/boards">
+        <svg class="gh" width="17" height="17" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+        reindent/boards
+      </a>
+    </div>
+
+    <p class="note">Installs into <code>.claude/skills/</code>, <code>.agents/skills/</code> and more — one skill, every agent.</p>
+
+    <div class="oralt">
+      <span class="oralt__line">— or —</span>
+      <p>Just hand this page to your agent: paste <button class="urlcopy" type="button" data-copy="https://boards.reindent.com" data-label="boards.reindent.com">boards.reindent.com</button> into Claude Code, Codex, or Cursor and it'll take care of everything — install the skill, scaffold the files, and set up the board.</p>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="container foot">
+    <nav class="skl-row" aria-label="Reindent Skills">
+      <a href="../boards/"><svg class="skl-icon--sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4l6 0"/><path d="M14 4l6 0"/><path d="M4 8m0 2a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v8a2 2 0 0 1 -2 2h-2a2 2 0 0 1 -2 -2z"/><path d="M14 8m0 2a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v2a2 2 0 0 1 -2 2h-2a2 2 0 0 1 -2 -2z"/></svg>boards</a>
+      <a href="../chat/"><svg class="skl-icon--sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 14l-3 -3h-7a1 1 0 0 1 -1 -1v-6a1 1 0 0 1 1 -1h9a1 1 0 0 1 1 1v10"/><path d="M14 15v2a1 1 0 0 1 -1 1h-7l-3 3v-10a1 1 0 0 1 1 -1h2"/></svg>chat</a>
+      <a href="../browser/"><svg class="skl-icon--sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5m0 2a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v10a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2z"/><path d="M6 8h.01"/><path d="M9 8h.01"/></svg>browser</a>
+    </nav>
+
+    <div>
+      <div class="foot__brand">
+        <svg class="logo" width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5" stroke="currentColor" stroke-width="1.6"/><path d="M14 14.6l1.7 1.7 3.1-3.7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span>BOARDS<span class="dotmd">.md</span></span>
+      </div>
+      <p>By <a href="https://reindent.com" style="color:var(--dim);border-bottom:1px solid var(--border)">Reindent</a> — we harden AI-built apps for production.<br>Boards is how we run our own roadmap.</p>
+    </div>
+    <nav class="foot__links">
+      <a href="https://github.com/reindent/boards">GitHub</a>
+      <a href="https://github.com/reindent/boards#readme">Docs</a>
+      <a href="https://reindent.com">reindent.com</a>
+    </nav>
+  </div>
+</footer>
+
+<script>
+  // copy-to-clipboard (only claim success when the copy actually resolves)
+  document.querySelectorAll('[data-copy]').forEach(function(btn){
+    var label = btn.getAttribute('data-label') || 'Copy';
+    function restore(){ btn.textContent = label; btn.classList.remove('copied'); }
+    btn.addEventListener('click', function(){
+      var text = btn.getAttribute('data-copy');
+      function ok(){ btn.textContent = 'Copied ✓'; btn.classList.add('copied'); setTimeout(restore, 1400); }
+      function fail(){ btn.textContent = 'Copy failed'; setTimeout(restore, 1400); }
+      if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(text).then(ok, fail); }
+      else { fail(); }
+    });
+  });
+
+  // board view toggle
+  (function(){
+    var wrap = document.getElementById('boardview');
+    var btns = document.querySelectorAll('.toggle [data-view]');
+    if(!wrap || !btns.length) return;
+    btns.forEach(function(b){
+      b.addEventListener('click', function(){
+        btns.forEach(function(x){ x.classList.remove('is-on'); x.setAttribute('aria-pressed','false'); });
+        b.classList.add('is-on'); b.setAttribute('aria-pressed','true');
+        wrap.setAttribute('data-showing', b.getAttribute('data-view'));
+      });
+    });
+  })();
+
+  // animated story: typewriter + reveals + build->done + cursor clicks Kanban
+  (function(){
+    var s = document.getElementById('session');
+    if(!s) return;
+    var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var says = [].slice.call(s.querySelectorAll('.say'));
+    var texts = says.map(function(el){ return el.textContent; });
+    var reveals = [].slice.call(s.querySelectorAll('.reveal'));
+    var mb = s.querySelector('.miniboard');
+    var cursor = s.querySelector('.fauxcursor');
+    var kbtn = s.querySelector('.mbtoggle [data-mv="kanban"]');
+    var lbtn = s.querySelector('.mbtoggle [data-mv="list"]');
+    var timer = null, caretEl = null, gen = 0;
+
+    function setView(v){
+      if(!mb) return;
+      mb.setAttribute('data-mv', v);
+      if(kbtn && lbtn){
+        (v === 'kanban' ? kbtn : lbtn).classList.add('on');
+        (v === 'kanban' ? lbtn : kbtn).classList.remove('on');
+        kbtn.setAttribute('aria-pressed', v === 'kanban' ? 'true' : 'false');
+        lbtn.setAttribute('aria-pressed', v === 'kanban' ? 'false' : 'true');
+      }
+    }
+
+    // the miniboard toggle is clickable — mid-intro it snaps to the finished
+    // state first, so nothing is left half-typed or invisible.
+    [].slice.call(s.querySelectorAll('.mbtoggle button')).forEach(function(b){
+      b.addEventListener('click', function(){
+        if(s.classList.contains('anim')){
+          gen++; clearTimeout(timer); dropCaret();
+          says.forEach(function(el, i){ el.textContent = texts[i]; });
+          reveals.forEach(function(e){ e.classList.add('show'); });
+          s.classList.remove('anim'); s.classList.add('built');
+          if(cursor){ cursor.classList.remove('show','click'); }
+          if(kbtn){ kbtn.classList.remove('pressed'); }
+        }
+        setView(b.getAttribute('data-mv'));
+      });
+    });
+
+    // reduced motion / no-JS: everything visible, built, list view — no loop
+    if(reduce){
+      reveals.forEach(function(e){ e.classList.add('show'); });
+      s.classList.add('built'); setView('list');
+      return;
+    }
+
+    function wait(ms){ return new Promise(function(res){ timer = setTimeout(res, ms); }); }
+    function dropCaret(){ if(caretEl && caretEl.parentNode){ caretEl.parentNode.removeChild(caretEl); caretEl = null; } }
+    function show(sel){ var e = s.querySelector(sel); if(e) e.classList.add('show'); }
+    function type(el, text){
+      return new Promise(function(res){
+        var myGen = gen;
+        el.textContent = '';
+        var caret = document.createElement('span'); caret.className = 'tw-caret';
+        el.appendChild(caret); caretEl = caret;
+        var i = 0, speed = el.closest('.msg--user') ? 42 : 18;
+        (function tick(){
+          if(myGen !== gen){ res(); return; }
+          if(i < text.length){ caret.insertAdjacentText('beforebegin', text.charAt(i)); i++; timer = setTimeout(tick, speed); }
+          else { res(); }
+        })();
+      });
+    }
+    function moveCursorToKanban(){
+      return new Promise(function(res){
+        if(!cursor || !kbtn){ res(); return; }
+        var myGen = gen;
+        var box = s.getBoundingClientRect(), b = kbtn.getBoundingClientRect();
+        cursor.style.left = (b.left - box.left - 46) + 'px';
+        cursor.style.top = (b.top - box.top + 74) + 'px';
+        cursor.classList.add('show');
+        void cursor.offsetWidth; // reflow so the next values animate
+        cursor.style.left = (b.left - box.left + b.width / 2 - 3) + 'px';
+        cursor.style.top = (b.top - box.top + b.height / 2 - 1) + 'px';
+        setTimeout(function(){
+          if(myGen !== gen){ res(); return; }
+          cursor.classList.add('click'); kbtn.classList.add('pressed');
+          setTimeout(function(){ if(myGen === gen){ setView('kanban'); cursor.classList.remove('click'); } }, 230);
+          setTimeout(function(){ if(myGen === gen){ cursor.classList.remove('show'); } }, 720); // fade the cursor out after the click
+          setTimeout(res, 1080);
+        }, 1000);
+      });
+    }
+
+    async function play(){
+      var myGen = ++gen;
+      clearTimeout(timer);
+      reveals.forEach(function(e){ e.classList.remove('show'); });
+      says.forEach(function(el){ el.textContent = ''; });
+      s.classList.remove('built'); setView('list');
+      if(cursor){ cursor.classList.remove('show','click'); }
+      if(kbtn){ kbtn.classList.remove('pressed'); }
+      s.classList.add('anim');
+      function alive(){ return myGen === gen; }
+
+      await wait(500); if(!alive()) return;
+      show('.msg1'); await wait(240); if(!alive()) return;
+      await type(says[0], texts[0]); if(!alive()) return; await wait(650); dropCaret();
+
+      show('.msg2'); await wait(200); if(!alive()) return;
+      await type(says[1], texts[1]); if(!alive()) return; dropCaret();
+      await wait(350); show('.blk-board'); await wait(1100); if(!alive()) return;
+
+      show('.msg3'); await wait(240); if(!alive()) return;
+      await type(says[2], texts[2]); if(!alive()) return; await wait(650); dropCaret();
+
+      show('.msg4'); await wait(200); if(!alive()) return;
+      await type(says[3], texts[3]); if(!alive()) return; dropCaret();
+      await wait(320); show('.blk-tools'); await wait(560); if(!alive()) return;
+      s.classList.add('built');                 // T-03 flips to Done, count 4->3
+      await wait(640); show('.blk-diff'); await wait(1500); if(!alive()) return;
+
+      await moveCursorToKanban();
+      // plays once and stops — no auto-replay (use the Replay button)
+    }
+
+    play();
+    var replay = document.getElementById('replay');
+    if(replay){ replay.addEventListener('click', function(){ play(); }); }
+  })();
+</script>
+
+</body>
+</html>
