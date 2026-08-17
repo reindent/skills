@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8" />
+<link rel="icon" type="image/svg+xml" href="../assets/icon.svg" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>/browser : drive a real browser, safely</title>
 <meta name="description" content="browser: drive a real, headed, logged-in Chrome over the DevTools Protocol (no Playwright, no Puppeteer), Chromium-first on macOS and Linux, under the session-isolation discipline that keeps a fleet of agents safe." />
@@ -110,7 +111,8 @@
 
   .foot{border-top:1px solid var(--border);margin-top:30px;padding:32px 0 30px;color:var(--faint);font-size:.85rem}
   .foot__grid{display:grid;grid-template-columns:minmax(0,1.4fr) auto auto;gap:clamp(22px,5vw,64px);align-items:start}
-  .foot__logo{font-weight:650;color:var(--text)}
+  .foot__logo{font-weight:650;color:var(--text);display:inline-flex;align-items:center;gap:8px}
+  .foot__logo .brandmark{width:18px;height:18px;border-radius:4px}
   .foot__logo b{color:var(--a)}
   .foot__grid p{margin:8px 0 0;max-width:34ch;line-height:1.55}
   .foot__skills{display:grid;gap:10px}
@@ -252,7 +254,7 @@
   <div class="container">
     <div class="foot__grid">
       <div>
-        <span class="foot__logo">Reindent <b>Skills</b></span>
+        <span class="foot__logo"><svg class="brandmark" viewBox="0 0 48 48" aria-hidden="true"><rect width="48" height="48" rx="10" fill="#12161b"/><rect x="16" y="10" width="22" height="10" rx="3" fill="#7aa8ff" opacity=".85"/><rect x="12" y="19" width="22" height="10" rx="3" fill="#6fd7e8" opacity=".92"/><rect x="8" y="28" width="22" height="10" rx="3" fill="#7ee0a3"/></svg>Reindent <b>Skills</b></span>
         <p>Extracted from daily production use by the Reindent agent workforce.</p>
       </div>
       <nav class="foot__skills" aria-label="Skills">

@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8" />
+<link rel="icon" type="image/svg+xml" href="assets/icon.svg" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Reindent Skills</title>
 <meta name="description" content="The skills the Reindent studio itself runs on: the board that writes itself, the chat protocol agents use to agree, and the browser discipline that keeps a fleet safe." />
@@ -45,7 +46,8 @@
 
   .nav{position:sticky;top:0;z-index:20;backdrop-filter:blur(10px);background:rgba(10,11,13,.72);border-bottom:1px solid var(--border)}
   .nav__inner{display:flex;align-items:center;justify-content:space-between;height:60px}
-  .brand{font-weight:650;letter-spacing:-.01em;font-size:1.02rem}
+  .brand{font-weight:650;letter-spacing:-.01em;font-size:1.02rem;display:inline-flex;align-items:center;gap:9px}
+  .brandmark{width:22px;height:22px;border-radius:5px}
   .brand .hl{color:var(--green)}
   .nav__links{display:flex;align-items:center;gap:24px}
   .nav__links a{color:var(--dim);font-size:.9rem;transition:color .15s}
@@ -146,7 +148,8 @@
   .foot a{color:var(--dim)}
   .foot a:hover{color:var(--text)}
   .foot__grid{display:grid;grid-template-columns:minmax(0,1.4fr) auto auto;gap:clamp(22px,5vw,64px);align-items:start}
-  .foot__logo{font-weight:650;color:var(--text)}
+  .foot__logo{font-weight:650;color:var(--text);display:inline-flex;align-items:center;gap:8px}
+  .foot__logo .brandmark{width:18px;height:18px;border-radius:4px}
   .foot__logo b{color:var(--green)}
   .foot__brand p{margin:8px 0 0;max-width:34ch;line-height:1.55}
   .foot__install{display:inline-block;margin-top:12px;font-size:.76rem;color:var(--green);background:var(--panel-2);border:1px solid var(--border);border-radius:8px;padding:7px 11px}
@@ -171,7 +174,7 @@
 
 <header class="nav">
   <div class="container nav__inner">
-    <a class="brand" href="./">Reindent <span class="hl">Skills</span></a>
+    <a class="brand" href="./"><svg class="brandmark" viewBox="0 0 48 48" aria-hidden="true"><rect width="48" height="48" rx="10" fill="#12161b"/><rect x="16" y="10" width="22" height="10" rx="3" fill="#7aa8ff" opacity=".85"/><rect x="12" y="19" width="22" height="10" rx="3" fill="#6fd7e8" opacity=".92"/><rect x="8" y="28" width="22" height="10" rx="3" fill="#7ee0a3"/></svg>Reindent <span class="hl">Skills</span></a>
     <nav class="nav__links">
       <a href="boards/">boards</a>
       <a href="chat/">chat</a>
@@ -247,7 +250,7 @@
   <div class="container">
     <div class="foot__grid">
       <div class="foot__brand">
-        <span class="foot__logo">Reindent <b>Skills</b></span>
+        <span class="foot__logo"><svg class="brandmark" viewBox="0 0 48 48" aria-hidden="true"><rect width="48" height="48" rx="10" fill="#12161b"/><rect x="16" y="10" width="22" height="10" rx="3" fill="#7aa8ff" opacity=".85"/><rect x="12" y="19" width="22" height="10" rx="3" fill="#6fd7e8" opacity=".92"/><rect x="8" y="28" width="22" height="10" rx="3" fill="#7ee0a3"/></svg>Reindent <b>Skills</b></span>
         <p>The skills our studio actually runs on, extracted from daily production use by the Reindent agent workforce.</p>
         <code class="foot__install">$ npx skills add reindent/boards</code>
       </div>
