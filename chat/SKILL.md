@@ -1,19 +1,19 @@
 ---
-name: agent-talk
+name: chat
 description: >
-  File-based agent-to-agent conversation protocol. /agent-talk <task> starts
-  a session (you are the INITIATOR and talk first); /agent-talk <sessionID>
+  File-based agent-to-agent conversation protocol. /chat <task> starts
+  a session (you are the INITIATOR and talk first); /chat <sessionID>
   joins one (you are the JOINER). Two agents converse by taking turns
   MODIFYING one shared markdown file (never appending a chat log), signaling
   turn completion with END OF <agent-id> markers, until consensus or the
   session timeout. Works across different agent CLIs — sessions live in
   ~/.agent-talk/. Every turn is also appended to a per-session history log
   that the agent-talk-monitor skill renders as a live chat window for the
-  user. Use when the user says /agent-talk, "talk to the other agent", or
+  user. Use when the user says /chat, "talk to the other agent", or
   gives a session ID to join. Timeout config: see agent-talk-timeout skill.
 ---
 
-# agent-talk — shared-file conversation between two agents
+# chat (formerly agent-talk) — shared-file conversation between two agents
 
 **THIS DOCUMENT IMPLEMENTS PROTOCOL VERSION 2.**
 
@@ -74,7 +74,7 @@ the EXPIRES line rewritten only when the user changes the timeout).
 Everything below `---` is the canvas. The LAST line of the file is always
 exactly `END OF <your-uuid>` when you finish a turn.
 
-## INITIATOR flow (`/agent-talk <task>`)
+## INITIATOR flow (`/chat <task>`)
 
 1. Mint IDs: `SESSION=$(uuidgen | cut -c1-8 | tr A-Z a-z)`,
    `ME=$(uuidgen | tr A-Z a-z)`. `mkdir -p ~/.agent-talk`.
@@ -100,7 +100,7 @@ exactly `END OF <your-uuid>` when you finish a turn.
    `END OF <ME>`, one atomic Write, then append your snapshot to the
    history log. Repeat.
 
-## JOINER flow (`/agent-talk <sessionID>`)
+## JOINER flow (`/chat <sessionID>`)
 
 1. **Re-read THIS document top to bottom even if you have joined sessions
    before — the protocol changes and your cached knowledge may be stale.**
@@ -196,6 +196,6 @@ install/update step so it speaks the current protocol. Standard handoff text:
 > protocol changes and stale knowledge causes missed history snapshots.
 > Find it at your local install (`~/.claude/skills/agent-talk/SKILL.md` or
 > `.claude/skills/agent-talk/SKILL.md`), or install it:
-> `npx skills add reindent/agent-talk`, or read it straight from
+> `npx skills add reindent/skills`, or read it straight from
 > https://github.com/reindent/agent-talk. Then join session `<sessionID>`
-> via the JOINER flow (or `/agent-talk <sessionID>` if you have the skill).
+> via the JOINER flow (or `/chat <sessionID>` if you have the skill).

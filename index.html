@@ -252,7 +252,7 @@
       <div class="foot__brand">
         <span class="foot__logo"><svg class="brandmark" viewBox="0 0 48 48" aria-hidden="true"><rect width="48" height="48" rx="10" fill="#12161b"/><rect x="16" y="10" width="22" height="10" rx="3" fill="#7aa8ff" opacity=".85"/><rect x="12" y="19" width="22" height="10" rx="3" fill="#6fd7e8" opacity=".92"/><rect x="8" y="28" width="22" height="10" rx="3" fill="#7ee0a3"/></svg>Reindent <b>Skills</b></span>
         <p>The skills our studio actually runs on, extracted from daily production use by the Reindent agent workforce.</p>
-        <code class="foot__install">$ npx skills add reindent/boards</code>
+        <code class="foot__install">$ npx skills add reindent/skills</code>
       </div>
       <nav class="foot__skills" aria-label="Skills">
         <a href="boards/" style="--ac:var(--green)"><svg class="skl-icon skl-icon--sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4l6 0"/><path d="M14 4l6 0"/><path d="M4 8m0 2a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v8a2 2 0 0 1 -2 2h-2a2 2 0 0 1 -2 -2z"/><path d="M14 8m0 2a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v2a2 2 0 0 1 -2 2h-2a2 2 0 0 1 -2 -2z"/></svg>boards</a>
@@ -271,10 +271,10 @@
 <script>
 (function(){
   if (window.matchMedia('(prefers-reduced-motion: reduce)').matches){
-    document.getElementById('tw').textContent = 'npx skills add reindent/boards';
+    document.getElementById('tw').textContent = 'npx skills add reindent/skills';
     return;
   }
-  var CMDS = ['npx skills add reindent/boards','npx skills add reindent/agent-talk','npx skills add reindent/browser'];
+  var CMDS = ['npx skills add reindent/skills','# installs boards + chat + browser'];
   var el = document.getElementById('tw'), ci = 0, pos = 0, del = false;
   function step(){
     var s = CMDS[ci];
