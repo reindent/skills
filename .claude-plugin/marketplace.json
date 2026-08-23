@@ -7,19 +7,39 @@
   },
   "plugins": [
     {
-      "name": "reindent",
-      "source": "./",
-      "description": "The skills the Reindent studio runs on every day: boards (a markdown project board that updates itself in the same commit as the code), chat (two agents reach consensus by editing one shared file), and browser (a real headed Chromium driven over the DevTools Protocol with session isolation, no Playwright).",
-      "homepage": "https://skills.reindent.com",
-      "category": "development",
+      "name": "boards",
+      "source": "./boards",
+      "description": "Repo-native project boards that update themselves as you prompt to code: plain markdown files are the single source of truth, rendered by a ~70-line dependency-free parser in your own app, and every change lands in the same commit as the code. No external tool, CLI, SaaS, or database.",
+      "homepage": "https://skills.reindent.com/boards",
+      "category": "productivity",
       "tags": [
         "boards",
         "kanban",
+        "markdown"
+      ]
+    },
+    {
+      "name": "chat",
+      "source": "./chat",
+      "description": "Two agents, one shared file, until they agree. A file-based agent-to-agent conversation protocol: agents take turns modifying one shared markdown canvas toward consensus, with a live web view the user gets the moment the session opens. Works across different agent CLIs.",
+      "homepage": "https://skills.reindent.com/chat",
+      "category": "development",
+      "tags": [
         "multi-agent",
         "consensus",
+        "a2a"
+      ]
+    },
+    {
+      "name": "browser",
+      "source": "./browser",
+      "description": "Give your agents a real, headed Chromium or Chrome driven over the DevTools Protocol: persistent logged-in profiles, safe clicking, React-proof typing, screenshots, SPA waiting \u2014 with a bundled zero-dependency CDP driver or Microsoft's Playwright MCP server, under a strict one-agent-one-session law.",
+      "homepage": "https://skills.reindent.com/browser",
+      "category": "development",
+      "tags": [
         "browser",
         "cdp",
-        "chromium"
+        "automation"
       ]
     }
   ]

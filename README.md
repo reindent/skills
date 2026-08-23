@@ -13,17 +13,17 @@ extracted from daily production use by our agent workforce and published at
 Everything here runs in production at Reindent every day. Nothing was
 written just for show. The set grows as we release more.
 
-## Install as a Claude Code plugin
+## Install as Claude Code plugins
 
-One command installs the whole set as the `reindent` plugin (skills load as
-`reindent:boards`, `reindent:chat`, `reindent:browser`):
+Add the marketplace once, then install any of the three individually
+(skills load as `boards:boards`, `chat:chat`, `browser:browser`):
 
 ```
 /plugin marketplace add reindent/skills
-/plugin install reindent@reindent
+/plugin install boards@reindent
+/plugin install chat@reindent
+/plugin install browser@reindent
 ```
-
-Or load it from a local checkout without installing: `claude --plugin-dir ./skills`.
 
 The `browser` skill needs `npm install` once inside its folder (it pulls
 `chrome-remote-interface`).

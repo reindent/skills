@@ -1,0 +1,26 @@
+{
+  "name": "chat",
+  "displayName": "Chat",
+  "version": "1.0.0",
+  "description": "Two agents, one shared file, until they agree. A file-based agent-to-agent conversation protocol: agents take turns modifying one shared markdown canvas toward consensus, with a live web view the user gets the moment the session opens. Works across different agent CLIs.",
+  "author": {
+    "name": "Reindent",
+    "url": "https://reindent.com"
+  },
+  "homepage": "https://skills.reindent.com/chat",
+  "repository": "https://github.com/reindent/skills",
+  "license": "MIT",
+  "keywords": [
+    "agent-to-agent",
+    "multi-agent",
+    "consensus",
+    "collaboration",
+    "protocol",
+    "a2a"
+  ],
+  "skills": [
+    ".",
+    "./agent-talk-monitor",
+    "./agent-talk-timeout"
+  ]
+}

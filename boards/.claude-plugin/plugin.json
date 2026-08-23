@@ -1,0 +1,22 @@
+{
+  "name": "boards",
+  "displayName": "Boards",
+  "version": "1.0.0",
+  "description": "Repo-native project boards that update themselves as you prompt to code: plain markdown files are the single source of truth, rendered by a ~70-line dependency-free parser in your own app, and every change lands in the same commit as the code. No external tool, CLI, SaaS, or database.",
+  "author": {
+    "name": "Reindent",
+    "url": "https://reindent.com"
+  },
+  "homepage": "https://skills.reindent.com/boards",
+  "repository": "https://github.com/reindent/skills",
+  "license": "MIT",
+  "keywords": [
+    "boards",
+    "kanban",
+    "project-board",
+    "todo",
+    "roadmap",
+    "markdown",
+    "project-management"
+  ]
+}

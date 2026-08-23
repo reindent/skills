@@ -1,0 +1,22 @@
+{
+  "name": "browser",
+  "displayName": "Browser",
+  "version": "1.0.0",
+  "description": "Give your agents a real, headed Chromium or Chrome driven over the DevTools Protocol: persistent logged-in profiles, safe clicking, React-proof typing, screenshots, SPA waiting \u2014 with a bundled zero-dependency CDP driver or Microsoft's Playwright MCP server, under a strict one-agent-one-session law.",
+  "author": {
+    "name": "Reindent",
+    "url": "https://reindent.com"
+  },
+  "homepage": "https://skills.reindent.com/browser",
+  "repository": "https://github.com/reindent/skills",
+  "license": "MIT",
+  "keywords": [
+    "browser",
+    "cdp",
+    "chromium",
+    "chrome",
+    "automation",
+    "devtools",
+    "playwright-mcp"
+  ]
+}
