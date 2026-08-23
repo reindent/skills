@@ -1,0 +1,12 @@
+{
+  "name": "reindent",
+  "displayName": "Reindent Skills",
+  "version": "1.0.0",
+  "description": "The skills the Reindent studio runs on every day: boards (a markdown project board that updates itself in the same commit as the code), chat (two agents reach consensus by editing one shared file), and browser (a real headed Chromium driven over the DevTools Protocol with session isolation, no Playwright). Extracted from daily production use by an agent workforce.",
+  "author": { "name": "Reindent", "url": "https://reindent.com" },
+  "homepage": "https://skills.reindent.com",
+  "repository": "https://github.com/reindent/skills",
+  "license": "MIT",
+  "keywords": ["boards", "kanban", "project-board", "markdown", "agent-to-agent", "multi-agent", "consensus", "browser", "cdp", "chromium", "automation"],
+  "skills": ["./boards", "./chat", "./browser", "./chat/agent-talk-monitor", "./chat/agent-talk-timeout"]
+}

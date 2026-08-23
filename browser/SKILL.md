@@ -1,6 +1,6 @@
 ---
 name: browser
-description: "Control a real, headed Chromium or Chrome via the DevTools Protocol (CDP), Chromium-first cross-platform (macOS + Linux; Windows not supported): launch with a persistent profile, connect, read pages, click safely, type into React apps, screenshot, and wait for SPAs, without Playwright or Puppeteer. Use when a task needs a logged-in real browser session driven programmatically."
+description: "Control a real, headed Chromium or Chrome via the DevTools Protocol (CDP), Chromium-first cross-platform (macOS + Linux; Windows not supported): launch with a persistent profile, connect, read pages, click safely, type into React apps, screenshot, and wait for SPAs. Two drivers on the same session discipline: the bundled zero-dependency CDP driver, or Microsoft's Playwright MCP server (registration lines included). Use when a task needs a logged-in real browser session driven programmatically."
 ---
 
 # browser: drive a real Chromium/Chrome over the DevTools Protocol
@@ -34,6 +34,49 @@ that turns automation into liability.
    the account the action is intended for. Mismatch = stop and report.
 
 One session, one agent, always yours, always verified.
+
+## Driver choice: raw CDP or Playwright MCP
+
+Everything below drives the browser with the bundled `scripts/cdp.js` and raw
+DevTools calls — zero dependencies beyond `chrome-remote-interface`, works
+anywhere Node runs. Since mid-2026 there is a second, lower-maintenance lane we
+run in production alongside it: **Microsoft's Playwright MCP server**
+(`@playwright/mcp`, stable). Its accessibility-snapshot interaction model
+retires hand-written selectors and wait loops for day-to-day clicking, typing,
+and form work.
+
+Register it as an MCP server with its OWN persistent profile (the session law
+applies identically — one agent, one profile, one server):
+
+```bash
+claude mcp add playwright --scope user --   npx @playwright/mcp@latest --browser chrome   --user-data-dir "$HOME/.cache/mcp-profile-<agent-role>"
+```
+
+Or attach it to a CDP Chrome you launched yourself per section 1 (same
+profile, same port — you keep the launch discipline, Playwright does the
+interaction):
+
+```bash
+claude mcp add playwright-cdp --   npx @playwright/mcp@latest --cdp-endpoint http://127.0.0.1:<your-port>
+```
+
+Working notes from production use:
+
+- Read via `browser_snapshot` (accessibility tree) by default; screenshot only
+  when layout, color, or truncation matters — snapshots are cheaper and give
+  you stable element refs to click.
+- File uploads: click the page's real upload control first, then answer the
+  file chooser with `browser_file_upload`. Setting a hidden `<input type=file>`
+  directly bypasses the app's upload handler and leaves dialogs stuck.
+- One client per profile: Playwright MCP enforces it with a conflict warning.
+  Parallel lanes need distinct profile dirs (or `--isolated`, which drops
+  session persistence). Never point two agents at one profile.
+- Logged-in sites: one tab, human pace. Parallel automation on a logged-in
+  session trips rate limiting fast.
+
+Keep the raw CDP driver for what the tools do not cover — arbitrary in-page
+JS evaluation loops, custom polling predicates, screenshot-coordinate work —
+and for environments where an MCP client is not available.
 
 ## 1. Launch
 

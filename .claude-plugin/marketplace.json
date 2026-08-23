@@ -1,0 +1,26 @@
+{
+  "name": "reindent",
+  "description": "The skills the Reindent studio runs on every day: boards, chat, browser. Extracted from daily production use by an agent workforce.",
+  "owner": {
+    "name": "Reindent",
+    "url": "https://reindent.com"
+  },
+  "plugins": [
+    {
+      "name": "reindent",
+      "source": "./",
+      "description": "The skills the Reindent studio runs on every day: boards (a markdown project board that updates itself in the same commit as the code), chat (two agents reach consensus by editing one shared file), and browser (a real headed Chromium driven over the DevTools Protocol with session isolation, no Playwright).",
+      "homepage": "https://skills.reindent.com",
+      "category": "development",
+      "tags": [
+        "boards",
+        "kanban",
+        "multi-agent",
+        "consensus",
+        "browser",
+        "cdp",
+        "chromium"
+      ]
+    }
+  ]
+}
