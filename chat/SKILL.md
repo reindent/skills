@@ -9,7 +9,8 @@ description: >
   session timeout. Works across different agent CLIs — sessions live in
   ~/.agent-talk/. Every turn is also appended to a per-session history log
   that the agent-talk-monitor skill renders as a live chat window for the
-  user. Use when the user says /chat, "talk to the other agent", or
+  user. The user gets the live watch URL the MOMENT the
+  session opens — never at the end. Use when the user says /chat, "talk to the other agent", or
   gives a session ID to join. Timeout config: see agent-talk-timeout skill.
 ---
 
@@ -74,6 +75,18 @@ the EXPIRES line rewritten only when the user changes the timeout).
 Everything below `---` is the canvas. The LAST line of the file is always
 exactly `END OF <your-uuid>` when you finish a turn.
 
+## The watch-link law (both roles, non-negotiable)
+
+The moment the communication channel exists, YOUR user gets the live watch
+URL — before the conversation happens, not after. If the agent-talk-monitor
+skill is installed (a sibling of this skill), run `scripts/monitor.sh
+<sessionID>` as soon as the session file exists (initiator: right after
+creating it; joiner: right after reading it, before your first turn) and
+print the URL it emits as a clickable link. Never auto-open the browser;
+never wait for the chat to finish; a session whose user first sees the URL
+at the end is a protocol violation. Showing a transcript afterward is a
+fallback for when the monitor skill is absent, not a substitute.
+
 ## INITIATOR flow (`/chat <task>`)
 
 1. Mint IDs: `SESSION=$(uuidgen | cut -c1-8 | tr A-Z a-z)`,
@@ -87,13 +100,14 @@ exactly `END OF <your-uuid>` when you finish a turn.
    agent. End the file with `END OF <ME>`. Write it in ONE atomic Write.
    Then append your snapshot to the history log (see **History log** below).
 4. **Tell the user the session ID immediately** (they must give it to the
-   other agent) and your agent ID. **Invite the user to watch the chat**:
-   if the agent-talk-monitor skill is installed (a sibling of this skill,
-   e.g. `~/.claude/skills/agent-talk-monitor/` or
-   `.claude/skills/agent-talk-monitor/`), run its `scripts/monitor.sh
-   $SESSION` (starts the local viewer server WITHOUT opening a browser) and
-   give the user the URL it prints as a clickable link. Never auto-open the
-   browser — the user decides whether to watch.
+   other agent) and your agent ID, **and hand them the watch URL in the
+   same message** (the watch-link law above): run
+   `~/.claude/skills/agent-talk-monitor/scripts/monitor.sh $SESSION`
+   (or the `.claude/skills/` sibling path; starts the local viewer server
+   WITHOUT opening a browser) and give the user the URL it prints as a
+   clickable link. Do this BEFORE entering the wait loop — the user watches
+   the conversation live from turn one. Never auto-open the browser — the
+   user decides whether to watch.
 5. Enter the wait loop (below). When it's your turn again: read the file,
    think, MODIFY the canvas (restructure/refine — do NOT append a chat log;
    the canvas should converge toward the final answer), end with
@@ -106,12 +120,16 @@ exactly `END OF <your-uuid>` when you finish a turn.
    before — the protocol changes and your cached knowledge may be stale.**
    Then read `~/.agent-talk/<sessionID>.md` and apply the **Versioning**
    check against its `PROTOCOL:` line. Mint your own `ME=$(uuidgen)`.
-2. Your first turn is only valid if the file currently ends with the
+2. **Hand YOUR user the watch URL now** (the watch-link law): if the
+   agent-talk-monitor skill is installed, run its `scripts/monitor.sh
+   <sessionID>` and print the URL as a clickable link — before writing
+   your first turn.
+3. Your first turn is only valid if the file currently ends with the
    initiator's END marker (it will, right after creation). Register: extend
    the AGENTS header line with `, <ME>=joiner`, write your reply into the
    canvas, end with `END OF <ME>`. One atomic Write, then append your
    snapshot to the history log.
-3. Enter the wait loop. Same turn rules (snapshot after every turn).
+4. Enter the wait loop. Same turn rules (snapshot after every turn).
 
 ## History log (append-only — powers the human chat view)
 
