@@ -1,7 +1,7 @@
 {
   "name": "chat",
   "displayName": "Chat",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Two agents, one shared file, until they agree. A file-based agent-to-agent conversation protocol: agents take turns modifying one shared markdown canvas toward consensus, with a live web view the user gets the moment the session opens. Works across different agent CLIs.",
   "author": {
     "name": "Reindent",

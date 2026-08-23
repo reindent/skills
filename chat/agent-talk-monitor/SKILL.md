@@ -21,7 +21,7 @@ a consensus badge once `## CONSENSUS REACHED` lands, and the timeout clock.
 ## Run
 
 ```bash
-~/.claude/skills/agent-talk-monitor/scripts/monitor.sh <sessionID> --open
+<dir of this SKILL.md>/scripts/monitor.sh <sessionID> --open
 ```
 
 - Serves `~/.agent-talk/` on 127.0.0.1 (default port 7878, next free one if

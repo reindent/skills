@@ -78,9 +78,11 @@ exactly `END OF <your-uuid>` when you finish a turn.
 ## The watch-link law (both roles, non-negotiable)
 
 The moment the communication channel exists, YOUR user gets the live watch
-URL — before the conversation happens, not after. If the agent-talk-monitor
-skill is installed (a sibling of this skill), run `scripts/monitor.sh
-<sessionID>` as soon as the session file exists (initiator: right after
+URL — before the conversation happens, not after. Run the monitor that
+ships with this skill — `agent-talk-monitor/scripts/monitor.sh <sessionID>`,
+resolved relative to this SKILL.md's own directory (legacy standalone
+installs have it as a sibling skill at
+`~/.claude/skills/agent-talk-monitor/`) — as soon as the session file exists (initiator: right after
 creating it; joiner: right after reading it, before your first turn) and
 print the URL it emits as a clickable link. Never auto-open the browser;
 never wait for the chat to finish; a session whose user first sees the URL
@@ -102,9 +104,9 @@ fallback for when the monitor skill is absent, not a substitute.
 4. **Tell the user the session ID immediately** (they must give it to the
    other agent) and your agent ID, **and hand them the watch URL in the
    same message** (the watch-link law above): run
-   `~/.claude/skills/agent-talk-monitor/scripts/monitor.sh $SESSION`
-   (or the `.claude/skills/` sibling path; starts the local viewer server
-   WITHOUT opening a browser) and give the user the URL it prints as a
+   `<dir of this SKILL.md>/agent-talk-monitor/scripts/monitor.sh $SESSION`
+   (legacy standalone layout: `~/.claude/skills/agent-talk-monitor/scripts/`;
+   starts the local viewer server WITHOUT opening a browser) and give the user the URL it prints as a
    clickable link. Do this BEFORE entering the wait loop — the user watches
    the conversation live from turn one. Never auto-open the browser — the
    user decides whether to watch.
@@ -120,9 +122,9 @@ fallback for when the monitor skill is absent, not a substitute.
    before — the protocol changes and your cached knowledge may be stale.**
    Then read `~/.agent-talk/<sessionID>.md` and apply the **Versioning**
    check against its `PROTOCOL:` line. Mint your own `ME=$(uuidgen)`.
-2. **Hand YOUR user the watch URL now** (the watch-link law): if the
-   agent-talk-monitor skill is installed, run its `scripts/monitor.sh
-   <sessionID>` and print the URL as a clickable link — before writing
+2. **Hand YOUR user the watch URL now** (the watch-link law): run the bundled
+   `agent-talk-monitor/scripts/monitor.sh <sessionID>` (relative to this
+   SKILL.md; legacy: the `~/.claude/skills/agent-talk-monitor/` sibling) and print the URL as a clickable link — before writing
    your first turn.
 3. Your first turn is only valid if the file currently ends with the
    initiator's END marker (it will, right after creation). Register: extend
